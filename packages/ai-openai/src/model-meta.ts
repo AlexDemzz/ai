@@ -2500,7 +2500,16 @@ const GPT_6_ASTRA = {
     output: ['text'],
     endpoints: ['chat', 'chat-completions'],
     features: ['streaming', 'function_calling', 'structured_outputs'],
-    tools: [],
+    tools: [
+      'web_search',
+      'file_search',
+      'image_generation',
+      'code_interpreter',
+      'mcp',
+      'computer_use',
+      'shell',
+      'apply_patch',
+    ],
   },
   pricing: {
     input: {
@@ -2558,7 +2567,16 @@ const GPT_6_LUNA = {
     output: ['text'],
     endpoints: ['chat', 'chat-completions'],
     features: ['streaming', 'function_calling', 'structured_outputs'],
-    tools: [],
+    tools: [
+      'web_search',
+      'file_search',
+      'image_generation',
+      'code_interpreter',
+      'mcp',
+      'computer_use',
+      'shell',
+      'apply_patch',
+    ],
   },
   pricing: {
     input: {
@@ -2616,7 +2634,16 @@ const GPT_6_SOL = {
     output: ['text'],
     endpoints: ['chat', 'chat-completions'],
     features: ['streaming', 'function_calling', 'structured_outputs'],
-    tools: [],
+    tools: [
+      'web_search',
+      'file_search',
+      'image_generation',
+      'code_interpreter',
+      'mcp',
+      'computer_use',
+      'shell',
+      'apply_patch',
+    ],
   },
   pricing: {
     input: {
