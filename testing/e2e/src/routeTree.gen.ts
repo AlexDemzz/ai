@@ -74,6 +74,7 @@ import { Route as ApiOpenrouterCostRouteImport } from './routes/api.openrouter-c
 import { Route as ApiOpenaiUsageDetailsRouteImport } from './routes/api.openai-usage-details'
 import { Route as ApiOpenaiStrictToolNullWireRouteImport } from './routes/api.openai-strict-tool-null-wire'
 import { Route as ApiOpenaiShellSkillsWireRouteImport } from './routes/api.openai-shell-skills-wire'
+import { Route as ApiOpenaiImage25ModelsRouteImport } from './routes/api.openai-image-2-5-models'
 import { Route as ApiOpenaiCompletedResponseTextRouteImport } from './routes/api.openai-completed-response-text'
 import { Route as ApiNonStreamingRunErrorRouteImport } from './routes/api.non-streaming-run-error'
 import { Route as ApiMultimodalToolResultWireRouteImport } from './routes/api.multimodal-tool-result-wire'
@@ -471,6 +472,11 @@ const ApiOpenaiShellSkillsWireRoute =
     path: '/api/openai-shell-skills-wire',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiOpenaiImage25ModelsRoute = ApiOpenaiImage25ModelsRouteImport.update({
+  id: '/api/openai-image-2-5-models',
+  path: '/api/openai-image-2-5-models',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOpenaiCompletedResponseTextRoute =
   ApiOpenaiCompletedResponseTextRouteImport.update({
     id: '/api/openai-completed-response-text',
@@ -846,6 +852,7 @@ export interface FileRoutesByFullPath {
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
+  '/api/openai-image-2-5-models': typeof ApiOpenaiImage25ModelsRoute
   '/api/openai-shell-skills-wire': typeof ApiOpenaiShellSkillsWireRoute
   '/api/openai-strict-tool-null-wire': typeof ApiOpenaiStrictToolNullWireRoute
   '/api/openai-usage-details': typeof ApiOpenaiUsageDetailsRoute
@@ -969,6 +976,7 @@ export interface FileRoutesByTo {
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
+  '/api/openai-image-2-5-models': typeof ApiOpenaiImage25ModelsRoute
   '/api/openai-shell-skills-wire': typeof ApiOpenaiShellSkillsWireRoute
   '/api/openai-strict-tool-null-wire': typeof ApiOpenaiStrictToolNullWireRoute
   '/api/openai-usage-details': typeof ApiOpenaiUsageDetailsRoute
@@ -1093,6 +1101,7 @@ export interface FileRoutesById {
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
+  '/api/openai-image-2-5-models': typeof ApiOpenaiImage25ModelsRoute
   '/api/openai-shell-skills-wire': typeof ApiOpenaiShellSkillsWireRoute
   '/api/openai-strict-tool-null-wire': typeof ApiOpenaiStrictToolNullWireRoute
   '/api/openai-usage-details': typeof ApiOpenaiUsageDetailsRoute
@@ -1218,6 +1227,7 @@ export interface FileRouteTypes {
     | '/api/multimodal-tool-result-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
+    | '/api/openai-image-2-5-models'
     | '/api/openai-shell-skills-wire'
     | '/api/openai-strict-tool-null-wire'
     | '/api/openai-usage-details'
@@ -1341,6 +1351,7 @@ export interface FileRouteTypes {
     | '/api/multimodal-tool-result-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
+    | '/api/openai-image-2-5-models'
     | '/api/openai-shell-skills-wire'
     | '/api/openai-strict-tool-null-wire'
     | '/api/openai-usage-details'
@@ -1464,6 +1475,7 @@ export interface FileRouteTypes {
     | '/api/multimodal-tool-result-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
+    | '/api/openai-image-2-5-models'
     | '/api/openai-shell-skills-wire'
     | '/api/openai-strict-tool-null-wire'
     | '/api/openai-usage-details'
@@ -1588,6 +1600,7 @@ export interface RootRouteChildren {
   ApiMultimodalToolResultWireRoute: typeof ApiMultimodalToolResultWireRoute
   ApiNonStreamingRunErrorRoute: typeof ApiNonStreamingRunErrorRoute
   ApiOpenaiCompletedResponseTextRoute: typeof ApiOpenaiCompletedResponseTextRoute
+  ApiOpenaiImage25ModelsRoute: typeof ApiOpenaiImage25ModelsRoute
   ApiOpenaiShellSkillsWireRoute: typeof ApiOpenaiShellSkillsWireRoute
   ApiOpenaiStrictToolNullWireRoute: typeof ApiOpenaiStrictToolNullWireRoute
   ApiOpenaiUsageDetailsRoute: typeof ApiOpenaiUsageDetailsRoute
@@ -2079,6 +2092,13 @@ declare module '@tanstack/react-router' {
       path: '/api/openai-shell-skills-wire'
       fullPath: '/api/openai-shell-skills-wire'
       preLoaderRoute: typeof ApiOpenaiShellSkillsWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/openai-image-2-5-models': {
+      id: '/api/openai-image-2-5-models'
+      path: '/api/openai-image-2-5-models'
+      fullPath: '/api/openai-image-2-5-models'
+      preLoaderRoute: typeof ApiOpenaiImage25ModelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/openai-completed-response-text': {
@@ -2618,6 +2638,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMultimodalToolResultWireRoute: ApiMultimodalToolResultWireRoute,
   ApiNonStreamingRunErrorRoute: ApiNonStreamingRunErrorRoute,
   ApiOpenaiCompletedResponseTextRoute: ApiOpenaiCompletedResponseTextRoute,
+  ApiOpenaiImage25ModelsRoute: ApiOpenaiImage25ModelsRoute,
   ApiOpenaiShellSkillsWireRoute: ApiOpenaiShellSkillsWireRoute,
   ApiOpenaiStrictToolNullWireRoute: ApiOpenaiStrictToolNullWireRoute,
   ApiOpenaiUsageDetailsRoute: ApiOpenaiUsageDetailsRoute,
