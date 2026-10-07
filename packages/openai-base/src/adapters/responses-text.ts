@@ -1202,25 +1202,6 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       accumulatedReasoning = ''
     }
 
-    // One response can carry several reasoning items (reason, search,
-    // reason again). Each gets its own thinking step, so a later item does
-    // not overwrite the id and encrypted_content of an earlier one.
-    const startReasoningItem = function* (
-      item: unknown,
-    ): Generator<AdapterYieldChunk> {
-      const nextId = readReasoningItem(item)?.id
-      if (
-        reasoningMessageId &&
-        reasoningItemId &&
-        nextId &&
-        nextId !== reasoningItemId
-      ) {
-        yield* closeReasoning()
-      }
-      captureReasoningItem(item)
-      yield* openReasoning()
-    }
-
     const userToolChunks = (
       item: unknown,
       outputIndex: number,
@@ -1600,7 +1581,8 @@ export abstract class OpenAIBaseResponsesTextAdapter<
             recordProviderWebSearchCall(item, chunk.output_index)
           }
           if (item.type === 'reasoning') {
-            yield* startReasoningItem(item)
+            captureReasoningItem(item)
+            yield* openReasoning()
           }
           if (item.type === 'function_call' && item.id) {
             // Track the item as soon as we see it so subsequent arg deltas
@@ -1771,9 +1753,11 @@ export abstract class OpenAIBaseResponsesTextAdapter<
             recordProviderWebSearchCall(item, chunk.output_index)
           }
           if (item.type === 'reasoning') {
-            // Close at the item's end so its signature lands before the
-            // items that follow it in the output.
-            yield* startReasoningItem(item)
+            captureReasoningItem(item)
+            yield* openReasoning()
+            // One response can carry several reasoning items (reason, search,
+            // reason again). Close each one at its end, so the next item opens
+            // its own step and does not overwrite this id and encrypted_content.
             yield* closeReasoning()
           }
           if (item.type === 'function_call' && item.id) {
