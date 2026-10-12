@@ -9,6 +9,7 @@ import { BaseTextAdapter } from '@tanstack/ai/adapters'
 import {
   hashToolCallId,
   orderedAssistantBlocks,
+  splitMidConversationChanges,
   toRunErrorPayload,
   toRetryAfterMs,
   toRunErrorRawEvent,
@@ -27,6 +28,7 @@ import type {
   StructuredOutputCompatibility,
 } from '../utils/schema-converter'
 import { buildResponsesUsage } from '../usage'
+import { getOpenAIProviderToolKind } from '../tools/openai-provider-tool'
 import { convertToolsToResponsesFormat } from './responses-tool-converter'
 import {
   hostedShellCallIds,
@@ -50,6 +52,7 @@ import type {
   ResponseOutputMessage,
   ResponseOutputText,
   ResponseStreamEvent,
+  Tool as ResponsesTool,
 } from 'openai/resources/responses/responses'
 import type {
   ContentPart,
@@ -60,6 +63,8 @@ import type {
   ProviderExecutedToolMetadata,
   ProviderExecutedToolSource,
   TextOptions,
+  AnyTool,
+  NormalizedSystemPrompt,
 } from '@tanstack/ai'
 
 // Base64 encoding of the '%PDF' file header — every PDF payload starts with
@@ -197,6 +202,11 @@ function readReasoningItem(
  */
 export interface OpenAIResponsesToolCallMetadata extends ProviderExecutedToolMetadata {
   itemId?: string
+  /**
+   * The namespace of the called function. A tool that came through
+   * `additional_tools` has one, and the API needs it on the replayed call.
+   */
+  namespace?: string
   /** Set for shell, local_shell, and apply_patch calls the app must run. */
   openaiUserTool?: OpenAIUserToolName
   /** Shell `action.max_output_length`, echoed on `shell_call_output`. */
@@ -205,6 +215,17 @@ export interface OpenAIResponsesToolCallMetadata extends ProviderExecutedToolMet
     webSearchCall: ResponseFunctionWebSearch
     urlCitations: Array<ResponseOutputText.URLCitation>
     assistantMessage?: ResponseOutputMessage
+  }
+}
+
+/** The tool call metadata of a streamed `function_call` item. */
+function functionCallMetadata(item: {
+  id?: string
+  namespace?: string
+}): OpenAIResponsesToolCallMetadata {
+  return {
+    ...(item.id ? { itemId: item.id } : {}),
+    ...(item.namespace ? { namespace: item.namespace } : {}),
   }
 }
 
@@ -1692,9 +1713,7 @@ export abstract class OpenAIBaseResponsesTextAdapter<
                 model: model || options.model,
                 timestamp: Date.now(),
                 index: chunk.output_index,
-                metadata: {
-                  itemId: item.id,
-                } satisfies OpenAIResponsesToolCallMetadata,
+                metadata: functionCallMetadata(item),
               }
               metadata.started = true
             }
@@ -1858,9 +1877,7 @@ export abstract class OpenAIBaseResponsesTextAdapter<
                 model: model || options.model,
                 timestamp: Date.now(),
                 index: metadata.index,
-                metadata: {
-                  itemId: item.id,
-                } satisfies OpenAIResponsesToolCallMetadata,
+                metadata: functionCallMetadata(item),
               }
               metadata.started = true
             }
@@ -2028,9 +2045,7 @@ export abstract class OpenAIBaseResponsesTextAdapter<
                 model: model || options.model,
                 timestamp: Date.now(),
                 index: metadata.index,
-                metadata: {
-                  itemId: item.id,
-                } satisfies OpenAIResponsesToolCallMetadata,
+                metadata: functionCallMetadata(item),
               }
               metadata.started = true
             }
@@ -2253,16 +2268,18 @@ export abstract class OpenAIBaseResponsesTextAdapter<
   protected mapOptionsToRequest(
     options: TextOptions<TProviderOptions>,
   ): Omit<ResponseCreateParams, 'stream'> {
-    const input = this.convertMessagesToInput(options.messages, options.model)
+    const mid = this.midConversationRequest(options)
+    const input = this.convertMessagesToInput(
+      options.messages,
+      options.model,
+      mid?.items,
+    )
 
     if (this.strictFallbackWarning) {
       warnStrictFallback(options.tools, options.logger)
     }
     const tools = options.tools
-      ? convertToolsToResponsesFormat(
-          options.tools,
-          this.makeStructuredOutputCompatible.bind(this),
-        )
+      ? this.convertTools(mid?.tools ?? options.tools)
       : undefined
 
     const modelOptions = options.modelOptions
@@ -2305,7 +2322,8 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       model: options.model,
       ...(options.metadata !== undefined && { metadata: options.metadata }),
       ...(() => {
-        const prompts = normalizeSystemPrompts(options.systemPrompts)
+        const prompts =
+          mid?.systemPrompts ?? normalizeSystemPrompts(options.systemPrompts)
         if (prompts.length === 0) return {}
         return { instructions: prompts.map((p) => p.content).join('\n') }
       })(),
@@ -2314,6 +2332,73 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       // modelOptions.tools the caller set above.
       ...(tools && tools.length > 0 && { tools }),
       ...(textFormat ?? {}),
+    }
+  }
+
+  /**
+   * Converts the tools for the request. A subclass with its own tool
+   * converter overrides this, so the start set and the `additional_tools`
+   * items of a mid-conversation change use that converter too.
+   */
+  protected convertTools(tools: Array<AnyTool>): Array<ResponsesTool> {
+    return convertToolsToResponsesFormat(
+      tools,
+      this.makeStructuredOutputCompatible.bind(this),
+    )
+  }
+
+  /**
+   * Mid-conversation changes: the start tools for `tools`, the start prompts
+   * for `instructions`, and the input items of each change by message index.
+   * Undefined when the request stays as today: the adapter has no channels,
+   * the engine passed no changes, or the changes do not fit the current lists.
+   */
+  private midConversationRequest(options: TextOptions<TProviderOptions>):
+    | {
+        tools?: Array<AnyTool>
+        systemPrompts?: Array<NormalizedSystemPrompt>
+        items: Map<number, ResponseInput>
+      }
+    | undefined {
+    const channels = this.midConversationChannels
+    if (!channels || !options.midConversationChanges) return undefined
+    const split = splitMidConversationChanges({
+      changes: options.midConversationChanges,
+      tools: options.tools ?? [],
+      systemPrompts: normalizeSystemPrompts(options.systemPrompts),
+    })
+    if (!split) return undefined
+    // A provider tool (web search, MCP, ...) cannot go in `additional_tools`,
+    // so its request keeps the full `tools` list.
+    const toolChannel =
+      channels.tools &&
+      ![...split.startTools, ...split.addedTools].some(
+        (tool) => getOpenAIProviderToolKind(tool) !== undefined,
+      )
+    const items = new Map<number, ResponseInput>()
+    for (const [before, change] of split.at) {
+      const changeItems: ResponseInput = []
+      if (toolChannel && change.tools.length > 0) {
+        changeItems.push({
+          type: 'additional_tools',
+          role: 'developer',
+          tools: this.convertTools(change.tools),
+        })
+      }
+      if (channels.systemPrompts && change.systemPrompts.length > 0) {
+        changeItems.push({
+          role: 'developer',
+          content: change.systemPrompts.map((p) => p.content).join('\n'),
+        })
+      }
+      if (changeItems.length > 0) items.set(before, changeItems)
+    }
+    return {
+      ...(toolChannel && { tools: split.startTools }),
+      ...(channels.systemPrompts && {
+        systemPrompts: split.startSystemPrompts,
+      }),
+      items,
     }
   }
 
@@ -2339,6 +2424,8 @@ export abstract class OpenAIBaseResponsesTextAdapter<
   protected convertMessagesToInput(
     messages: Array<ModelMessage>,
     targetModel: string = this.model,
+    /** Items to send directly before `messages[index]`, or at the end. */
+    insertBefore?: ReadonlyMap<number, ResponseInput>,
   ): ResponseInput {
     // History from another model loses its signatures, and its tool IDs are
     // rewritten to `call|item` IDs this API accepts. Each call stays paired.
@@ -2433,7 +2520,8 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       }
     >()
 
-    for (const message of messages) {
+    for (const [index, message] of messages.entries()) {
+      result.push(...(insertBefore?.get(index) ?? []))
       // Handle tool messages - convert to FunctionToolCallOutput
       if (message.role === 'tool') {
         const owner = message.toolCallId
@@ -2582,6 +2670,8 @@ export abstract class OpenAIBaseResponsesTextAdapter<
               ...(itemId && canPairReasoning && { id: itemId }),
               name: toolCall.function.name,
               arguments: argumentsString,
+              // Without its namespace, the API cannot find an added tool.
+              ...(metadata?.namespace && { namespace: metadata.namespace }),
             })
           }
         }
@@ -2658,6 +2748,7 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       })
     }
 
+    result.push(...(insertBefore?.get(messages.length) ?? []))
     return result
   }
 

@@ -7,6 +7,7 @@ import {
 import {
   REDACTED_THINKING_ID_PREFIX,
   orderedAssistantBlocks,
+  splitMidConversationChanges,
   toRetryAfterMs,
   toRunErrorRawEvent,
   transformMessagesForReplay,
@@ -19,6 +20,10 @@ import {
   readCodeExecutionSkills,
 } from '../tools/code-execution-tool'
 import { validateTextProviderOptions } from '../text/text-provider-options'
+import {
+  ANTHROPIC_DEFERRED_TOOL_PLACEHOLDER_NAME,
+  applyAnthropicPromptCache,
+} from '../prompt-cache'
 import { buildAnthropicUsage } from '../usage'
 import {
   createAnthropicClient,
@@ -29,6 +34,7 @@ import {
 import {
   ANTHROPIC_COMBINED_TOOLS_AND_SCHEMA_MODELS,
   ANTHROPIC_MODEL_INPUT_MODALITIES,
+  ANTHROPIC_MODEL_MID_CONVERSATION_CHANNELS,
   getAnthropicDefaultMaxTokens,
 } from '../model-meta'
 import type {
@@ -57,8 +63,10 @@ import type {
   BetaFileDocumentSource,
   BetaFileImageSource,
   BetaImageBlockParam,
+  BetaMessageParam,
   BetaRequestDocumentBlock,
   BetaTextBlockParam,
+  BetaTool,
   BetaURLImageSource,
   BetaURLPDFSource,
 } from '@anthropic-ai/sdk/resources/beta/messages'
@@ -68,9 +76,11 @@ import type {
   AnyTool,
   ContentPart,
   FetchWrapper,
+  MidConversationChannels,
   Modality,
   ModelMessage,
   AdapterYieldChunk,
+  NormalizedSystemPrompt,
   TextOptions,
   ToolCall,
 } from '@tanstack/ai'
@@ -187,7 +197,8 @@ export function messagesHaveFileSource(messages: Array<ModelMessage>): boolean {
  * - `code-execution-2025-08-25` when a `code_execution` tool is present,
  * - `skills-2025-10-02` when that tool carries skills,
  * - `context-management-2025-06-27` when `context_management` is set,
- * - `files-api-2025-04-14` when a message references an uploaded file handle.
+ * - `files-api-2025-04-14` when a message references an uploaded file handle,
+ * - `mid-conversation-tool-changes-2026-07-01` in mid-conversation tool mode.
  * Returns `undefined` when none apply (so the call site omits `betas`).
  */
 export function computeAnthropicBetas(
@@ -203,10 +214,14 @@ export function computeAnthropicBetas(
       }
     | undefined,
   hasFileSource = false,
+  midConversationToolChanges = false,
 ): Array<AnthropicBeta> | undefined {
   const betas = new Set<AnthropicBeta>()
 
   if (hasFileSource) betas.add('files-api-2025-04-14')
+  if (midConversationToolChanges) {
+    betas.add('mid-conversation-tool-changes-2026-07-01')
+  }
 
   const useInterleavedThinking =
     modelOptions?.thinking?.type === 'enabled' &&
@@ -260,9 +275,45 @@ export function computeAnthropicBetas(
 }
 
 /**
+ * The tool placeholder of mid-conversation tool mode, copied from pi 0.87.1.
+ * Anthropic adds hidden scaffolding once any tool has `defer_loading`. This
+ * deferred tool is in every tool-mode request, so that scaffolding stays in
+ * the cached prefix. The model never sees it.
+ */
+const DEFERRED_TOOL_PLACEHOLDER: BetaTool = {
+  name: ANTHROPIC_DEFERRED_TOOL_PLACEHOLDER_NAME,
+  description: 'Reserved placeholder. Never available. Never call this.',
+  input_schema: { type: 'object', properties: {}, required: [] },
+  defer_loading: true,
+}
+
+/**
+ * A mid-conversation `system` message. SDK 0.97.1 types only `user` and
+ * `assistant` messages and has no `tool_addition` block, so this type is local.
+ */
+interface AnthropicMidConversationSystemMessage {
+  role: 'system'
+  content: Array<
+    | TextBlockParam
+    | { type: 'tool_addition'; tool: { type: 'tool_reference'; name: string } }
+  >
+}
+
+/**
  * Configuration for Anthropic text adapter
  */
 export interface AnthropicTextConfig extends AnthropicClientConfig {
+  /**
+   * The mid-conversation channels (the
+   * `mid-conversation-tool-changes-2026-07-01` beta and mid-conversation
+   * `system` messages) of the models in
+   * `ANTHROPIC_MODEL_MID_CONVERSATION_CHANNELS`. When absent, they are on
+   * only for Anthropic's own API: a `baseURL`, a `fetch`, an injected
+   * `client`, or the SDK's `ANTHROPIC_BASE_URL` env var turns the default off. `true` turns them on anyway, for a
+   * gateway that passes the changes. `false` turns them off, so every
+   * request is built as before.
+   */
+  midConversationChannels?: boolean
   /** Replay ordinary thinking without a signature. The default is false. */
   allowEmptySignature?: boolean
   /** Identify a gateway separately from the direct Anthropic API. */
@@ -273,6 +324,8 @@ export type AnthropicTextAdapterConfig =
   | AnthropicTextConfig
   | {
       client: AnthropicMessagesClient
+      /** See {@link AnthropicTextConfig.midConversationChannels}. */
+      midConversationChannels?: boolean
       allowEmptySignature?: boolean
       provider?: string
     }
@@ -370,6 +423,10 @@ export class AnthropicTextAdapter<
   override readonly supportsFileSources = true
   override readonly inputModalities =
     ANTHROPIC_MODEL_INPUT_MODALITIES[this.model]
+  /** Set from `ANTHROPIC_MODEL_MID_CONVERSATION_CHANNELS` in the constructor. */
+  override readonly midConversationChannels:
+    | MidConversationChannels
+    | undefined = undefined
 
   private readonly client: SdkAnthropicMessagesClient
   private readonly allowEmptySignature: boolean
@@ -391,6 +448,20 @@ export class AnthropicTextAdapter<
     super({}, model)
     this.provider = config.provider ?? this.name
     this.allowEmptySignature = config.allowEmptySignature ?? false
+    // On by default only on Anthropic's own API: a proxy, a gateway, Vertex,
+    // or Bedrock (a `baseURL`, a `fetch`, an injected client, or the SDK's
+    // ANTHROPIC_BASE_URL env var) may not pass the changes. The option wins.
+    const envBaseURL =
+      typeof process !== 'undefined' && Boolean(process.env.ANTHROPIC_BASE_URL)
+    const customEndpoint =
+      'client' in config ||
+      ('baseURL' in config && Boolean(config.baseURL)) ||
+      ('fetch' in config && Boolean(config.fetch)) ||
+      envBaseURL
+    if (config.midConversationChannels ?? !customEndpoint) {
+      this.midConversationChannels =
+        ANTHROPIC_MODEL_MID_CONVERSATION_CHANNELS[model]
+    }
     if ('client' in config) {
       this.client = asSdkAnthropicMessagesClient(config.client)
       return
@@ -489,6 +560,10 @@ export class AnthropicTextAdapter<
           options.tools,
           options.modelOptions,
           messagesHaveFileSource(options.messages),
+          // Mid-conversation tool mode puts the deferred placeholder in `tools`.
+          requestParams.tools?.some(
+            (tool) => tool.name === DEFERRED_TOOL_PLACEHOLDER.name,
+          ),
         ),
       )
 
@@ -679,7 +754,8 @@ export class AnthropicTextAdapter<
     const modelOptions = options.modelOptions
 
     // Another model's history loses its signatures, and its tool IDs are
-    // rewritten to the shape Anthropic accepts.
+    // rewritten to the shape Anthropic accepts. Plan indexes match this
+    // array when the second replay keeps the same length.
     const replay = transformMessagesForReplay(
       options.messages,
       { provider: this.provider, api: this.api, model: options.model },
@@ -689,9 +765,16 @@ export class AnthropicTextAdapter<
         return clean.slice(0, 64 - suffix.length) + suffix
       },
     )
-    const formattedMessages = this.formatMessages(replay.messages)
+    const mid = this.midConversationRequest({
+      ...options,
+      messages: replay.messages,
+    })
+    const formattedMessages = this.formatMessages(
+      replay.messages,
+      mid?.systemMessages,
+    )
     const tools = options.tools
-      ? convertToolsToProviderFormat(options.tools)
+      ? (mid?.tools ?? convertToolsToProviderFormat(options.tools))
       : undefined
 
     const validProviderOptions: Partial<InternalTextProviderOptions> = {}
@@ -777,9 +860,13 @@ export class AnthropicTextAdapter<
     // outside the literal and spread it conditionally rather than
     // assigning `undefined` under exactOptionalPropertyTypes.
     const systemBlocks = ((): Array<TextBlockParam> | undefined => {
-      const normalized = normalizeSystemPrompts<AnthropicSystemPromptMetadata>(
-        options.systemPrompts,
-      )
+      // With a prompt channel, `system` holds only the start prompts. They
+      // keep their own `cache_control` metadata.
+      const normalized =
+        mid?.systemPrompts ??
+        normalizeSystemPrompts<AnthropicSystemPromptMetadata>(
+          options.systemPrompts,
+        )
       if (normalized.length === 0 && !this.oauth) return undefined
       const blocks = normalized.map(
         (p): TextBlockParam => ({
@@ -855,7 +942,84 @@ export class AnthropicTextAdapter<
       ...(outputConfig ?? {}),
     }
     validateTextProviderOptions(requestParams)
-    return requestParams
+    // Last step: the merged messages decide which message is last.
+    return applyAnthropicPromptCache(requestParams, options.promptCache)
+  }
+
+  /**
+   * Mid-conversation changes: the start prompts for `system`, the tool-mode
+   * `tools`, and a `system` message for each change by message index.
+   * Undefined when the request stays as today: the adapter has no channels,
+   * the engine passed no changes, or the changes do not fit the current lists.
+   */
+  private midConversationRequest(
+    options: TextOptions<AnthropicTextProviderOptions>,
+  ):
+    | {
+        systemPrompts?: Array<
+          NormalizedSystemPrompt<AnthropicSystemPromptMetadata>
+        >
+        tools?: InternalTextProviderOptions['tools']
+        systemMessages: Map<number, BetaMessageParam>
+      }
+    | undefined {
+    const channels = this.midConversationChannels
+    if (!channels || !options.midConversationChanges) return undefined
+    const split = splitMidConversationChanges({
+      changes: options.midConversationChanges,
+      tools: options.tools ?? [],
+      systemPrompts: normalizeSystemPrompts<AnthropicSystemPromptMetadata>(
+        options.systemPrompts,
+      ),
+    })
+    if (!split) return undefined
+    // Tool mode needs a start tool (Anthropic rejects a list where every
+    // tool is deferred), and a provider tool cannot be deferred by name.
+    const toolMode =
+      channels.tools &&
+      split.startTools.length > 0 &&
+      ![...split.startTools, ...split.addedTools].some(
+        (tool) => getAnthropicProviderToolKind(tool) !== undefined,
+      )
+    const systemMessages = new Map<number, BetaMessageParam>()
+    for (const [before, change] of split.at) {
+      const content: AnthropicMidConversationSystemMessage['content'] = [
+        ...(channels.systemPrompts
+          ? change.systemPrompts.map(
+              (p): TextBlockParam => ({ type: 'text', text: p.content }),
+            )
+          : []),
+        ...(toolMode
+          ? change.tools.map((tool) => ({
+              type: 'tool_addition' as const,
+              tool: { type: 'tool_reference' as const, name: tool.name },
+            }))
+          : []),
+      ]
+      if (content.length === 0) continue
+      const message: AnthropicMidConversationSystemMessage = {
+        role: 'system',
+        content,
+      }
+      // oxlint-disable-next-line eslint-js/no-restricted-syntax -- SDK 0.97.1 types no `system` message in `messages`; the models in the channel map accept one (pi 0.87.1).
+      systemMessages.set(before, message as unknown as BetaMessageParam)
+    }
+    return {
+      ...(channels.systemPrompts && {
+        systemPrompts: split.startSystemPrompts,
+      }),
+      ...(toolMode && {
+        tools: [
+          ...convertToolsToProviderFormat(split.startTools),
+          DEFERRED_TOOL_PLACEHOLDER,
+          ...convertToolsToProviderFormat(split.addedTools).map((tool) => ({
+            ...tool,
+            defer_loading: true,
+          })),
+        ],
+      }),
+      systemMessages,
+    }
   }
 
   /**
@@ -971,11 +1135,21 @@ export class AnthropicTextAdapter<
 
   private formatMessages(
     messages: Array<ModelMessage>,
+    /** Mid-conversation `system` messages by message index (`before`). */
+    systemMessages?: ReadonlyMap<number, BetaMessageParam>,
   ): InternalTextProviderOptions['messages'] {
     const formattedMessages: InternalTextProviderOptions['messages'] = []
+    // A system message waits for the next assistant message (or the end),
+    // so a `tool_result` still follows its `tool_use` directly.
+    const pendingSystemMessages: InternalTextProviderOptions['messages'] = []
 
-    for (const message of messages) {
+    for (const [index, message] of messages.entries()) {
       const role = message.role
+      const systemMessage = systemMessages?.get(index)
+      if (systemMessage) pendingSystemMessages.push(systemMessage)
+      if (role === 'assistant') {
+        formattedMessages.push(...pendingSystemMessages.splice(0))
+      }
 
       if (role === 'tool' && message.toolCallId) {
         const toolContent = message.content
@@ -1093,6 +1267,11 @@ export class AnthropicTextAdapter<
               : '',
       })
     }
+
+    // A change with `before === messages.length` goes at the end.
+    const endSystemMessage = systemMessages?.get(messages.length)
+    if (endSystemMessage) pendingSystemMessages.push(endSystemMessage)
+    formattedMessages.push(...pendingSystemMessages)
 
     // Post-process: Anthropic requires strictly alternating user/assistant roles.
     // Tool results are sent as role:'user' messages, which can create consecutive

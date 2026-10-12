@@ -12,6 +12,7 @@ import {
   throwIfConverseStreamError,
 } from '../converse/stream-processor'
 import { buildConverseUsage } from '../converse/usage'
+import { addPromptCachePoints } from '../converse/prompt-cache'
 import {
   STRUCTURED_TOOL_NAME,
   buildStructuredToolConfig,
@@ -643,13 +644,14 @@ export class BedrockConverseTextAdapter<
           }
         : undefined
 
-    return {
+    const input: ConverseCommandInput = {
       modelId: this.model,
       messages,
       ...(system.length > 0 && { system }),
       ...(toolConfig && { toolConfig }),
       ...(inferenceConfig && { inferenceConfig }),
     }
+    return addPromptCachePoints(this.model, input, options.promptCache)
   }
 }
 
