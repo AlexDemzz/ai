@@ -139,6 +139,7 @@ import { Route as ApiPortableSkillsWireRouteImport } from './routes/api.portable
 import { Route as ApiPromptCacheWireRouteImport } from './routes/api.prompt-cache-wire'
 import { Route as ApiProviderSearchMetadataWireRouteImport } from './routes/api.provider-search-metadata-wire'
 import { Route as ApiProviderToolDispatchWireRouteImport } from './routes/api.provider-tool-dispatch-wire'
+import { Route as ApiReasoningWireRouteImport } from './routes/api.reasoning-wire'
 import { Route as ApiRetryAfterRouteImport } from './routes/api.retry-after'
 import { Route as ApiSandboxDurabilityRouteImport } from './routes/api.sandbox-durability'
 import { Route as ApiSandboxFilePersistenceRouteImport } from './routes/api.sandbox-file-persistence'
@@ -149,6 +150,7 @@ import { Route as ApiSubagentsTestRouteImport } from './routes/api.subagents-tes
 import { Route as ApiSummarizeRouteImport } from './routes/api.summarize'
 import { Route as ApiTextFirstToolWireRouteImport } from './routes/api.text-first-tool-wire'
 import { Route as ApiToolCallLifecycleWireRouteImport } from './routes/api.tool-call-lifecycle-wire'
+import { Route as ApiToolChoiceWireRouteImport } from './routes/api.tool-choice-wire'
 import { Route as ApiToolFirstTextWireRouteImport } from './routes/api.tool-first-text-wire'
 import { Route as ApiToolsTestRouteImport } from './routes/api.tools-test'
 import { Route as ApiTranscriptionRouteImport } from './routes/api.transcription'
@@ -849,6 +851,11 @@ const ApiProviderToolDispatchWireRoute =
     path: '/api/provider-tool-dispatch-wire',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiReasoningWireRoute = ApiReasoningWireRouteImport.update({
+  id: '/api/reasoning-wire',
+  path: '/api/reasoning-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRetryAfterRoute = ApiRetryAfterRouteImport.update({
   id: '/api/retry-after',
   path: '/api/retry-after',
@@ -902,6 +909,11 @@ const ApiToolCallLifecycleWireRoute =
     path: '/api/tool-call-lifecycle-wire',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiToolChoiceWireRoute = ApiToolChoiceWireRouteImport.update({
+  id: '/api/tool-choice-wire',
+  path: '/api/tool-choice-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiToolFirstTextWireRoute = ApiToolFirstTextWireRouteImport.update({
   id: '/api/tool-first-text-wire',
   path: '/api/tool-first-text-wire',
@@ -1108,6 +1120,7 @@ export interface FileRoutesByFullPath {
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
+  '/api/reasoning-wire': typeof ApiReasoningWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1118,6 +1131,7 @@ export interface FileRoutesByFullPath {
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
+  '/api/tool-choice-wire': typeof ApiToolChoiceWireRoute
   '/api/tool-first-text-wire': typeof ApiToolFirstTextWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
   '/api/transcription': typeof ApiTranscriptionRouteWithChildren
@@ -1265,6 +1279,7 @@ export interface FileRoutesByTo {
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
+  '/api/reasoning-wire': typeof ApiReasoningWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1275,6 +1290,7 @@ export interface FileRoutesByTo {
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
+  '/api/tool-choice-wire': typeof ApiToolChoiceWireRoute
   '/api/tool-first-text-wire': typeof ApiToolFirstTextWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
   '/api/transcription': typeof ApiTranscriptionRouteWithChildren
@@ -1423,6 +1439,7 @@ export interface FileRoutesById {
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
+  '/api/reasoning-wire': typeof ApiReasoningWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1433,6 +1450,7 @@ export interface FileRoutesById {
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
+  '/api/tool-choice-wire': typeof ApiToolChoiceWireRoute
   '/api/tool-first-text-wire': typeof ApiToolFirstTextWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
   '/api/transcription': typeof ApiTranscriptionRouteWithChildren
@@ -1582,6 +1600,7 @@ export interface FileRouteTypes {
     | '/api/prompt-cache-wire'
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
+    | '/api/reasoning-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -1592,6 +1611,7 @@ export interface FileRouteTypes {
     | '/api/summarize'
     | '/api/text-first-tool-wire'
     | '/api/tool-call-lifecycle-wire'
+    | '/api/tool-choice-wire'
     | '/api/tool-first-text-wire'
     | '/api/tools-test'
     | '/api/transcription'
@@ -1739,6 +1759,7 @@ export interface FileRouteTypes {
     | '/api/prompt-cache-wire'
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
+    | '/api/reasoning-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -1749,6 +1770,7 @@ export interface FileRouteTypes {
     | '/api/summarize'
     | '/api/text-first-tool-wire'
     | '/api/tool-call-lifecycle-wire'
+    | '/api/tool-choice-wire'
     | '/api/tool-first-text-wire'
     | '/api/tools-test'
     | '/api/transcription'
@@ -1896,6 +1918,7 @@ export interface FileRouteTypes {
     | '/api/prompt-cache-wire'
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
+    | '/api/reasoning-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -1906,6 +1929,7 @@ export interface FileRouteTypes {
     | '/api/summarize'
     | '/api/text-first-tool-wire'
     | '/api/tool-call-lifecycle-wire'
+    | '/api/tool-choice-wire'
     | '/api/tool-first-text-wire'
     | '/api/tools-test'
     | '/api/transcription'
@@ -2054,6 +2078,7 @@ export interface RootRouteChildren {
   ApiPromptCacheWireRoute: typeof ApiPromptCacheWireRoute
   ApiProviderSearchMetadataWireRoute: typeof ApiProviderSearchMetadataWireRoute
   ApiProviderToolDispatchWireRoute: typeof ApiProviderToolDispatchWireRoute
+  ApiReasoningWireRoute: typeof ApiReasoningWireRoute
   ApiRetryAfterRoute: typeof ApiRetryAfterRoute
   ApiSandboxDurabilityRoute: typeof ApiSandboxDurabilityRoute
   ApiSandboxFilePersistenceRoute: typeof ApiSandboxFilePersistenceRoute
@@ -2064,6 +2089,7 @@ export interface RootRouteChildren {
   ApiSummarizeRoute: typeof ApiSummarizeRoute
   ApiTextFirstToolWireRoute: typeof ApiTextFirstToolWireRoute
   ApiToolCallLifecycleWireRoute: typeof ApiToolCallLifecycleWireRoute
+  ApiToolChoiceWireRoute: typeof ApiToolChoiceWireRoute
   ApiToolFirstTextWireRoute: typeof ApiToolFirstTextWireRoute
   ApiToolsTestRoute: typeof ApiToolsTestRoute
   ApiTranscriptionRoute: typeof ApiTranscriptionRouteWithChildren
@@ -2989,6 +3015,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProviderToolDispatchWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reasoning-wire': {
+      id: '/api/reasoning-wire'
+      path: '/api/reasoning-wire'
+      fullPath: '/api/reasoning-wire'
+      preLoaderRoute: typeof ApiReasoningWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/retry-after': {
       id: '/api/retry-after'
       path: '/api/retry-after'
@@ -3057,6 +3090,13 @@ declare module '@tanstack/react-router' {
       path: '/api/tool-call-lifecycle-wire'
       fullPath: '/api/tool-call-lifecycle-wire'
       preLoaderRoute: typeof ApiToolCallLifecycleWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tool-choice-wire': {
+      id: '/api/tool-choice-wire'
+      path: '/api/tool-choice-wire'
+      fullPath: '/api/tool-choice-wire'
+      preLoaderRoute: typeof ApiToolChoiceWireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/tool-first-text-wire': {
@@ -3359,6 +3399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPromptCacheWireRoute: ApiPromptCacheWireRoute,
   ApiProviderSearchMetadataWireRoute: ApiProviderSearchMetadataWireRoute,
   ApiProviderToolDispatchWireRoute: ApiProviderToolDispatchWireRoute,
+  ApiReasoningWireRoute: ApiReasoningWireRoute,
   ApiRetryAfterRoute: ApiRetryAfterRoute,
   ApiSandboxDurabilityRoute: ApiSandboxDurabilityRoute,
   ApiSandboxFilePersistenceRoute: ApiSandboxFilePersistenceRoute,
@@ -3369,6 +3410,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSummarizeRoute: ApiSummarizeRoute,
   ApiTextFirstToolWireRoute: ApiTextFirstToolWireRoute,
   ApiToolCallLifecycleWireRoute: ApiToolCallLifecycleWireRoute,
+  ApiToolChoiceWireRoute: ApiToolChoiceWireRoute,
   ApiToolFirstTextWireRoute: ApiToolFirstTextWireRoute,
   ApiToolsTestRoute: ApiToolsTestRoute,
   ApiTranscriptionRoute: ApiTranscriptionRouteWithChildren,

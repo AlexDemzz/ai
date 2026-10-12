@@ -214,6 +214,88 @@ class MyTextAdapter extends BaseTextAdapter<
 console.log(new MyTextAdapter('my-vision-model').inputModalities) // ['text', 'image']
 ```
 
+## Add reasoning to your adapter
+
+Your adapter talks to a thinking model, and you want `chat({ reasoning: 'high' })` to work, with a type error for a level the model does not have. Three steps:
+
+1. Put a `reasoning` field on each model's metadata.
+2. Build a type map of the levels with `ModelReasoningCapability`, and a runtime map with the same keys.
+3. Pass the levels to the adapter type, and return the runtime data from the `modelReasoning` hook.
+
+On an adapter built on `@tanstack/openai-base`, that is all. The base sends `reasoning_effort` on Chat Completions, or `reasoning: { effort, summary }` on Responses:
+
+```typescript
+import OpenAI from 'openai'
+import { chat } from '@tanstack/ai'
+import { OpenAIBaseChatCompletionsTextAdapter } from '@tanstack/openai-base'
+import type {
+  DefaultMessageMetadataByModality,
+  Modality,
+  ModelReasoning,
+} from '@tanstack/ai'
+import type { ModelReasoningCapability } from '@tanstack/ai/adapter-internals'
+
+// 1. The model's data: only the levels it has, with the value for each.
+const MY_MODEL = {
+  name: 'my-model',
+  reasoning: {
+    levels: { off: 'none', low: 'low', medium: 'medium', high: 'high' },
+    budget: false,
+  },
+} as const
+
+// 2. The levels for the types, and the same data at run time.
+const MY_REASONING = {
+  [MY_MODEL.name]: MY_MODEL.reasoning,
+}
+
+type MyModelReasoningByName = {
+  [K in keyof typeof MY_REASONING]: ModelReasoningCapability<
+    (typeof MY_REASONING)[K]
+  >
+}
+
+const MY_MODEL_REASONING: Readonly<Record<string, ModelReasoning>> =
+  MY_REASONING
+
+type MyModel = keyof MyModelReasoningByName
+
+// 3. The levels go in the last type parameter. The hook gives the data.
+class MyTextAdapter<TModel extends MyModel> extends OpenAIBaseChatCompletionsTextAdapter<
+  TModel,
+  Record<string, unknown>,
+  ReadonlyArray<Modality>,
+  DefaultMessageMetadataByModality,
+  ReadonlyArray<string>,
+  MyModelReasoningByName[TModel]
+> {
+  protected override modelReasoning(model: string) {
+    return MY_MODEL_REASONING[model]
+  }
+}
+
+const adapter = new MyTextAdapter(
+  'my-model',
+  'my-provider',
+  new OpenAI({ apiKey: 'my-key', baseURL: 'https://api.example.com/v1' }),
+)
+
+chat({ adapter, messages: [{ role: 'user', content: 'Hi' }], reasoning: 'high' })
+
+chat({
+  adapter,
+  messages: [{ role: 'user', content: 'Hi' }],
+  // @ts-expect-error my-model has no max level
+  reasoning: 'max',
+})
+```
+
+A model with `budget: true` also takes `budgetTokens`.
+
+Another wire format? Extend `BaseTextAdapter`, pass the levels as its last type parameter, and read `options.reasoning` in your request code. `resolveReasoning` from `@tanstack/ai/adapter-internals` moves the level to the nearest one the model has and gives its value. `reasoningBudget` gives the token budget for a level.
+
+A model added with `extendAdapter` has no reasoning data, so it takes no `reasoning`.
+
 ## Send the prompt cache
 
 `chat()` asks every adapter for [prompt caching](./prompt-caching) by default. It passes the setting as `options.promptCache`: a `retention` (`'none'`, `'short'`, or `'long'`) and an optional `key`. Map it to your provider's cache fields when you build the request:

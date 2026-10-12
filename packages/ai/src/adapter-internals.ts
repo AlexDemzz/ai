@@ -3,6 +3,12 @@
 // logger plumbing without leaking those symbols to end users.
 
 export type { ResolvedCategories } from './logger/internal-logger'
+export {
+  DEFAULT_REASONING_BUDGETS,
+  reasoningBudget,
+  resolveReasoning,
+} from './reasoning'
+export type { ModelReasoningCapability, ResolvedReasoning } from './reasoning'
 export { InternalLogger } from './logger/internal-logger'
 export type { Logger } from './logger/types'
 export { resolveDebugOption } from './logger/resolve'

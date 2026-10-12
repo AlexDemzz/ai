@@ -6,6 +6,7 @@ import { getOpenAIApiKeyFromEnv } from '../utils/client'
 import {
   OPENAI_MODEL_INPUT_MODALITIES,
   OPENAI_MODEL_MID_CONVERSATION_CHANNELS,
+  OPENAI_MODEL_REASONING,
   openAIModelRejectsSamplingParams,
   openAIModelUsesExplicitPromptCache,
 } from '../model-meta'
@@ -16,6 +17,7 @@ import type {
   OpenAIChatModelProviderOptionsByName,
   OpenAIChatModelToolCapabilitiesByName,
   OpenAIModelInputModalitiesByName,
+  OpenAIModelReasoningByName,
 } from '../model-meta'
 import type {
   ResponseCreateParams,
@@ -25,6 +27,7 @@ import type {
   AnyTool,
   MidConversationChannels,
   Modality,
+  ReasoningCapability,
   TextOptions,
 } from '@tanstack/ai'
 import type {
@@ -78,6 +81,12 @@ type ResolveInputModalities<TModel extends string> =
     ? OpenAIModelInputModalitiesByName[TModel]
     : readonly ['text', 'image', 'audio']
 
+/** The reasoning levels of a model, for `chat({ reasoning })`. `never`: none. */
+type ResolveReasoning<TModel extends string> =
+  TModel extends keyof OpenAIModelReasoningByName
+    ? OpenAIModelReasoningByName[TModel]
+    : never
+
 /**
  * Resolve tool capabilities for a specific model.
  * If the model has explicit tools in the map, use those; otherwise use empty tuple.
@@ -109,12 +118,14 @@ export class OpenAITextAdapter<
     ResolveInputModalities<TModel>,
   TToolCapabilities extends ReadonlyArray<string> =
     ResolveToolCapabilities<TModel>,
+  TReasoning extends ReasoningCapability = ResolveReasoning<TModel>,
 > extends OpenAIBaseResponsesTextAdapter<
   TModel,
   TProviderOptions,
   TInputModalities,
   OpenAIMessageMetadataByModality,
-  TToolCapabilities
+  TToolCapabilities,
+  TReasoning
 > {
   override readonly kind = 'text' as const
   override readonly name = 'openai' as const
@@ -148,6 +159,11 @@ export class OpenAITextAdapter<
   /** OpenAI's full tool converter (file_search, web_search, etc.). */
   protected override convertTools(tools: Array<AnyTool>): Array<ResponsesTool> {
     return convertToolsToProviderFormat(tools)
+  }
+
+  /** `chat({ reasoning })` goes out as `reasoning: { effort, summary }`. */
+  protected override modelReasoning(model: string) {
+    return OPENAI_MODEL_REASONING[model]
   }
 
   /**

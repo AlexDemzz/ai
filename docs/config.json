@@ -175,6 +175,11 @@
           "updatedAt": "2026-10-09"
         },
         {
+          "label": "Reasoning",
+          "to": "chat/reasoning",
+          "addedAt": "2026-10-09"
+        },
+        {
           "label": "Message Queue",
           "to": "chat/queueing",
           "addedAt": "2026-08-26"
@@ -282,7 +287,7 @@
           "label": "Tools",
           "to": "tools/tools",
           "addedAt": "2026-04-15",
-          "updatedAt": "2026-09-30"
+          "updatedAt": "2026-10-09"
         },
         {
           "label": "Server Tools",
@@ -1435,7 +1440,7 @@
           "label": "From Vercel AI SDK",
           "to": "migration/migration-from-vercel-ai",
           "addedAt": "2026-04-20",
-          "updatedAt": "2026-08-19"
+          "updatedAt": "2026-10-09"
         },
         {
           "label": "AG-UI Client Compliance",
@@ -1447,6 +1452,11 @@
           "label": "Sampling \u00e2\u2020\u2019 modelOptions",
           "to": "migration/sampling-options-to-model-options",
           "addedAt": "2026-06-03"
+        },
+        {
+          "label": "Reasoning option",
+          "to": "migration/reasoning-option",
+          "addedAt": "2026-10-09"
         },
         {
           "label": "TextPart markdown",

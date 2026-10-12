@@ -9,6 +9,7 @@ import { BaseTextAdapter } from '@tanstack/ai/adapters'
 import {
   hashToolCallId,
   orderedAssistantBlocks,
+  resolveReasoning,
   splitMidConversationChanges,
   toRunErrorPayload,
   toRetryAfterMs,
@@ -28,6 +29,7 @@ import type {
   StructuredOutputCompatibility,
 } from '../utils/schema-converter'
 import { buildResponsesUsage } from '../usage'
+import { toResponsesToolChoice } from '../tools/tool-choice'
 import { getOpenAIProviderToolKind } from '../tools/openai-provider-tool'
 import { convertToolsToResponsesFormat } from './responses-tool-converter'
 import {
@@ -62,6 +64,8 @@ import type {
   AdapterYieldChunk,
   ProviderExecutedToolMetadata,
   ProviderExecutedToolSource,
+  ModelReasoning,
+  ReasoningCapability,
   TextOptions,
   AnyTool,
   NormalizedSystemPrompt,
@@ -261,13 +265,16 @@ export abstract class OpenAIBaseResponsesTextAdapter<
   TMessageMetadata extends DefaultMessageMetadataByModality =
     DefaultMessageMetadataByModality,
   TToolCapabilities extends ReadonlyArray<string> = ReadonlyArray<string>,
+  TReasoning extends ReasoningCapability = never,
 > extends BaseTextAdapter<
   TModel,
   TProviderOptions,
   TInputModalities,
   TMessageMetadata,
   TToolCapabilities,
-  OpenAIResponsesToolCallMetadata
+  OpenAIResponsesToolCallMetadata,
+  never,
+  TReasoning
 > {
   override readonly kind = 'text' as const
   override readonly api: string = 'openai-responses'
@@ -1001,6 +1008,15 @@ export abstract class OpenAIBaseResponsesTextAdapter<
    */
   protected transformStructuredOutput(parsed: unknown): unknown {
     return parsed
+  }
+
+  /**
+   * The model's reasoning data for `chat({ reasoning })`. The default is
+   * none, so the base sends no reasoning field. A subclass returns the
+   * model's entry from the reasoning map in its `model-meta.ts`.
+   */
+  protected modelReasoning(_model: string): ModelReasoning | undefined {
+    return undefined
   }
 
   /**
@@ -2311,13 +2327,21 @@ export abstract class OpenAIBaseResponsesTextAdapter<
         }
       : undefined
 
+    // `chat({ toolChoice })` is sent only when the request has tools. It goes
+    // before the `modelOptions` spread, so a `tool_choice` there wins.
+    const toolChoiceField =
+      tools?.length && options.toolChoice !== undefined
+        ? { tool_choice: toResponsesToolChoice(options.toolChoice) }
+        : undefined
+
     // `modelOptions` is the sole sampling surface: `temperature`, `top_p`, and
     // `max_output_tokens` live there (typed via OpenAISamplingOptions) and are
     // spread first. Engine-managed fields (`model`, `metadata`, `instructions`,
     // `input`, `tools`, `textFormat`) are layered on top afterward so they
     // always win over any same-named key a caller happened to put in
     // `modelOptions`.
-    return {
+    const params: Omit<ResponseCreateParams, 'stream'> = {
+      ...toolChoiceField,
       ...modelOptions,
       model: options.model,
       ...(options.metadata !== undefined && { metadata: options.metadata }),
@@ -2333,6 +2357,24 @@ export abstract class OpenAIBaseResponsesTextAdapter<
       ...(tools && tools.length > 0 && { tools }),
       ...(textFormat ?? {}),
     }
+    // `chat({ reasoning })`: the model's effort for the level, and a summary
+    // so the thinking text streams back. The SDK type does not list every
+    // provider's effort values, so the field goes on with Object.assign.
+    const reasoning = resolveReasoning(
+      options.reasoning,
+      this.modelReasoning(options.model),
+    )
+    if (reasoning?.value) {
+      Object.assign(params, {
+        reasoning: {
+          effort: reasoning.value,
+          ...(reasoning.summary && reasoning.level !== 'off'
+            ? { summary: 'auto' }
+            : {}),
+        },
+      })
+    }
+    return params
   }
 
   /**

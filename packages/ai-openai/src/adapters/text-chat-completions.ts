@@ -1,7 +1,10 @@
 import OpenAI from 'openai'
 import { OpenAIBaseChatCompletionsTextAdapter } from '@tanstack/openai-base'
 import { getOpenAIApiKeyFromEnv } from '../utils/client'
-import { OPENAI_MODEL_INPUT_MODALITIES } from '../model-meta'
+import {
+  OPENAI_MODEL_INPUT_MODALITIES,
+  OPENAI_MODEL_REASONING,
+} from '../model-meta'
 import { chatPromptCacheFields } from '../prompt-cache'
 import type {
   OPENAI_CHAT_MODELS,
@@ -9,8 +12,9 @@ import type {
   OpenAIChatModelProviderOptionsByName,
   OpenAIChatModelToolCapabilitiesByName,
   OpenAIModelInputModalitiesByName,
+  OpenAIModelReasoningByName,
 } from '../model-meta'
-import type { Modality, TextOptions } from '@tanstack/ai'
+import type { Modality, ReasoningCapability, TextOptions } from '@tanstack/ai'
 import type { OpenAIMessageMetadataByModality } from '../message-types'
 import type { OpenAIClientConfig } from '../utils/client'
 import type { ExternalTextProviderOptions } from '../text/text-provider-options'
@@ -44,6 +48,11 @@ type ResolveToolCapabilities<TModel extends string> =
     ? NonNullable<OpenAIChatModelToolCapabilitiesByName[TModel]>
     : readonly []
 
+type ResolveReasoning<TModel extends string> =
+  TModel extends keyof OpenAIModelReasoningByName
+    ? OpenAIModelReasoningByName[TModel]
+    : never
+
 /**
  * OpenAI Text adapter targeting the **Chat Completions** API
  * (`/v1/chat/completions`).
@@ -59,18 +68,25 @@ export class OpenAIChatCompletionsTextAdapter<
     ResolveInputModalities<TModel>,
   TToolCapabilities extends ReadonlyArray<string> =
     ResolveToolCapabilities<TModel>,
+  TReasoning extends ReasoningCapability = ResolveReasoning<TModel>,
 > extends OpenAIBaseChatCompletionsTextAdapter<
   TModel,
   TProviderOptions,
   TInputModalities,
   OpenAIMessageMetadataByModality,
-  TToolCapabilities
+  TToolCapabilities,
+  TReasoning
 > {
   override readonly kind = 'text' as const
   override readonly inputModalities = OPENAI_MODEL_INPUT_MODALITIES[this.model]
 
   constructor(config: OpenAIChatCompletionsConfig, model: TModel) {
     super(model, 'openai-chat', new OpenAI(config), config)
+  }
+
+  /** `chat({ reasoning })` goes out as `reasoning_effort`. */
+  protected override modelReasoning(model: string) {
+    return OPENAI_MODEL_REASONING[model]
   }
 
   /** The request, plus the prompt cache fields for `chat({ promptCache })`. */
