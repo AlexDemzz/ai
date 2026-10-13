@@ -74,6 +74,7 @@ import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiChatCompletionsIncompleteStreamRouteImport } from './routes/api.chat-completions-incomplete-stream'
 import { Route as ApiCompactionWireRouteImport } from './routes/api.compaction-wire'
 import { Route as ApiContextOverflowRouteImport } from './routes/api.context-overflow'
+import { Route as ApiCopilotWireRouteImport } from './routes/api.copilot-wire'
 import { Route as ApiCrossModelReplayWireRouteImport } from './routes/api.cross-model-replay-wire'
 import { Route as ApiDevtoolsMemoryRouteImport } from './routes/api.devtools-memory'
 import { Route as ApiDurableDeliveryRouteImport } from './routes/api.durable-delivery'
@@ -509,6 +510,11 @@ const ApiCompactionWireRoute = ApiCompactionWireRouteImport.update({
 const ApiContextOverflowRoute = ApiContextOverflowRouteImport.update({
   id: '/api/context-overflow',
   path: '/api/context-overflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCopilotWireRoute = ApiCopilotWireRouteImport.update({
+  id: '/api/copilot-wire',
+  path: '/api/copilot-wire',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCrossModelReplayWireRoute = ApiCrossModelReplayWireRouteImport.update({
@@ -1079,6 +1085,7 @@ export interface FileRoutesByFullPath {
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/compaction-wire': typeof ApiCompactionWireRoute
   '/api/context-overflow': typeof ApiContextOverflowRoute
+  '/api/copilot-wire': typeof ApiCopilotWireRoute
   '/api/cross-model-replay-wire': typeof ApiCrossModelReplayWireRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
@@ -1242,6 +1249,7 @@ export interface FileRoutesByTo {
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/compaction-wire': typeof ApiCompactionWireRoute
   '/api/context-overflow': typeof ApiContextOverflowRoute
+  '/api/copilot-wire': typeof ApiCopilotWireRoute
   '/api/cross-model-replay-wire': typeof ApiCrossModelReplayWireRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
@@ -1406,6 +1414,7 @@ export interface FileRoutesById {
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/compaction-wire': typeof ApiCompactionWireRoute
   '/api/context-overflow': typeof ApiContextOverflowRoute
+  '/api/copilot-wire': typeof ApiCopilotWireRoute
   '/api/cross-model-replay-wire': typeof ApiCrossModelReplayWireRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
@@ -1571,6 +1580,7 @@ export interface FileRouteTypes {
     | '/api/chat-completions-incomplete-stream'
     | '/api/compaction-wire'
     | '/api/context-overflow'
+    | '/api/copilot-wire'
     | '/api/cross-model-replay-wire'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
@@ -1734,6 +1744,7 @@ export interface FileRouteTypes {
     | '/api/chat-completions-incomplete-stream'
     | '/api/compaction-wire'
     | '/api/context-overflow'
+    | '/api/copilot-wire'
     | '/api/cross-model-replay-wire'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
@@ -1897,6 +1908,7 @@ export interface FileRouteTypes {
     | '/api/chat-completions-incomplete-stream'
     | '/api/compaction-wire'
     | '/api/context-overflow'
+    | '/api/copilot-wire'
     | '/api/cross-model-replay-wire'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
@@ -2061,6 +2073,7 @@ export interface RootRouteChildren {
   ApiChatCompletionsIncompleteStreamRoute: typeof ApiChatCompletionsIncompleteStreamRoute
   ApiCompactionWireRoute: typeof ApiCompactionWireRoute
   ApiContextOverflowRoute: typeof ApiContextOverflowRoute
+  ApiCopilotWireRoute: typeof ApiCopilotWireRoute
   ApiCrossModelReplayWireRoute: typeof ApiCrossModelReplayWireRoute
   ApiDevtoolsMemoryRoute: typeof ApiDevtoolsMemoryRoute
   ApiDurableDeliveryRoute: typeof ApiDurableDeliveryRoute
@@ -2610,6 +2623,13 @@ declare module '@tanstack/react-router' {
       path: '/api/context-overflow'
       fullPath: '/api/context-overflow'
       preLoaderRoute: typeof ApiContextOverflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/copilot-wire': {
+      id: '/api/copilot-wire'
+      path: '/api/copilot-wire'
+      fullPath: '/api/copilot-wire'
+      preLoaderRoute: typeof ApiCopilotWireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cross-model-replay-wire': {
@@ -3414,6 +3434,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiChatCompletionsIncompleteStreamRoute,
   ApiCompactionWireRoute: ApiCompactionWireRoute,
   ApiContextOverflowRoute: ApiContextOverflowRoute,
+  ApiCopilotWireRoute: ApiCopilotWireRoute,
   ApiCrossModelReplayWireRoute: ApiCrossModelReplayWireRoute,
   ApiDevtoolsMemoryRoute: ApiDevtoolsMemoryRoute,
   ApiDurableDeliveryRoute: ApiDurableDeliveryRoute,
