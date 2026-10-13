@@ -146,6 +146,7 @@ import { Route as ApiPromptCacheWireRouteImport } from './routes/api.prompt-cach
 import { Route as ApiProviderSearchMetadataWireRouteImport } from './routes/api.provider-search-metadata-wire'
 import { Route as ApiProviderToolDispatchWireRouteImport } from './routes/api.provider-tool-dispatch-wire'
 import { Route as ApiReasoningWireRouteImport } from './routes/api.reasoning-wire'
+import { Route as ApiResponsesAnswerItemsWireRouteImport } from './routes/api.responses-answer-items-wire'
 import { Route as ApiRetryAfterRouteImport } from './routes/api.retry-after'
 import { Route as ApiSandboxDurabilityRouteImport } from './routes/api.sandbox-durability'
 import { Route as ApiSandboxFilePersistenceRouteImport } from './routes/api.sandbox-file-persistence'
@@ -892,6 +893,12 @@ const ApiReasoningWireRoute = ApiReasoningWireRouteImport.update({
   path: '/api/reasoning-wire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResponsesAnswerItemsWireRoute =
+  ApiResponsesAnswerItemsWireRouteImport.update({
+    id: '/api/responses-answer-items-wire',
+    path: '/api/responses-answer-items-wire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiRetryAfterRoute = ApiRetryAfterRouteImport.update({
   id: '/api/retry-after',
   path: '/api/retry-after',
@@ -1163,6 +1170,7 @@ export interface FileRoutesByFullPath {
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
   '/api/reasoning-wire': typeof ApiReasoningWireRoute
+  '/api/responses-answer-items-wire': typeof ApiResponsesAnswerItemsWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1328,6 +1336,7 @@ export interface FileRoutesByTo {
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
   '/api/reasoning-wire': typeof ApiReasoningWireRoute
+  '/api/responses-answer-items-wire': typeof ApiResponsesAnswerItemsWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1494,6 +1503,7 @@ export interface FileRoutesById {
   '/api/provider-search-metadata-wire': typeof ApiProviderSearchMetadataWireRoute
   '/api/provider-tool-dispatch-wire': typeof ApiProviderToolDispatchWireRoute
   '/api/reasoning-wire': typeof ApiReasoningWireRoute
+  '/api/responses-answer-items-wire': typeof ApiResponsesAnswerItemsWireRoute
   '/api/retry-after': typeof ApiRetryAfterRoute
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
@@ -1661,6 +1671,7 @@ export interface FileRouteTypes {
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
     | '/api/reasoning-wire'
+    | '/api/responses-answer-items-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -1826,6 +1837,7 @@ export interface FileRouteTypes {
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
     | '/api/reasoning-wire'
+    | '/api/responses-answer-items-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -1991,6 +2003,7 @@ export interface FileRouteTypes {
     | '/api/provider-search-metadata-wire'
     | '/api/provider-tool-dispatch-wire'
     | '/api/reasoning-wire'
+    | '/api/responses-answer-items-wire'
     | '/api/retry-after'
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
@@ -2157,6 +2170,7 @@ export interface RootRouteChildren {
   ApiProviderSearchMetadataWireRoute: typeof ApiProviderSearchMetadataWireRoute
   ApiProviderToolDispatchWireRoute: typeof ApiProviderToolDispatchWireRoute
   ApiReasoningWireRoute: typeof ApiReasoningWireRoute
+  ApiResponsesAnswerItemsWireRoute: typeof ApiResponsesAnswerItemsWireRoute
   ApiRetryAfterRoute: typeof ApiRetryAfterRoute
   ApiSandboxDurabilityRoute: typeof ApiSandboxDurabilityRoute
   ApiSandboxFilePersistenceRoute: typeof ApiSandboxFilePersistenceRoute
@@ -3142,6 +3156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReasoningWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/responses-answer-items-wire': {
+      id: '/api/responses-answer-items-wire'
+      path: '/api/responses-answer-items-wire'
+      fullPath: '/api/responses-answer-items-wire'
+      preLoaderRoute: typeof ApiResponsesAnswerItemsWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/retry-after': {
       id: '/api/retry-after'
       path: '/api/retry-after'
@@ -3526,6 +3547,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProviderSearchMetadataWireRoute: ApiProviderSearchMetadataWireRoute,
   ApiProviderToolDispatchWireRoute: ApiProviderToolDispatchWireRoute,
   ApiReasoningWireRoute: ApiReasoningWireRoute,
+  ApiResponsesAnswerItemsWireRoute: ApiResponsesAnswerItemsWireRoute,
   ApiRetryAfterRoute: ApiRetryAfterRoute,
   ApiSandboxDurabilityRoute: ApiSandboxDurabilityRoute,
   ApiSandboxFilePersistenceRoute: ApiSandboxFilePersistenceRoute,
