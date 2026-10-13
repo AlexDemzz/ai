@@ -136,6 +136,7 @@ import { Route as ApiOpenrouterWebToolsWireRouteImport } from './routes/api.open
 import { Route as ApiOtelMediaRouteImport } from './routes/api.otel-media'
 import { Route as ApiOtelTranscriptionRouteImport } from './routes/api.otel-transcription'
 import { Route as ApiOtelUsageRouteImport } from './routes/api.otel-usage'
+import { Route as ApiOwnKeySchemaWireRouteImport } from './routes/api.own-key-schema-wire'
 import { Route as ApiPersistenceDurabilityRouteImport } from './routes/api.persistence-durability'
 import { Route as ApiPortableSkillsWireRouteImport } from './routes/api.portable-skills-wire'
 import { Route as ApiPromptCacheWireRouteImport } from './routes/api.prompt-cache-wire'
@@ -835,6 +836,11 @@ const ApiOtelUsageRoute = ApiOtelUsageRouteImport.update({
   path: '/api/otel-usage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOwnKeySchemaWireRoute = ApiOwnKeySchemaWireRouteImport.update({
+  id: '/api/own-key-schema-wire',
+  path: '/api/own-key-schema-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPersistenceDurabilityRoute =
   ApiPersistenceDurabilityRouteImport.update({
     id: '/api/persistence-durability',
@@ -1129,6 +1135,7 @@ export interface FileRoutesByFullPath {
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-transcription': typeof ApiOtelTranscriptionRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/own-key-schema-wire': typeof ApiOwnKeySchemaWireRoute
   '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
   '/api/portable-skills-wire': typeof ApiPortableSkillsWireRoute
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
@@ -1290,6 +1297,7 @@ export interface FileRoutesByTo {
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-transcription': typeof ApiOtelTranscriptionRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/own-key-schema-wire': typeof ApiOwnKeySchemaWireRoute
   '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
   '/api/portable-skills-wire': typeof ApiPortableSkillsWireRoute
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
@@ -1452,6 +1460,7 @@ export interface FileRoutesById {
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-transcription': typeof ApiOtelTranscriptionRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/own-key-schema-wire': typeof ApiOwnKeySchemaWireRoute
   '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
   '/api/portable-skills-wire': typeof ApiPortableSkillsWireRoute
   '/api/prompt-cache-wire': typeof ApiPromptCacheWireRoute
@@ -1615,6 +1624,7 @@ export interface FileRouteTypes {
     | '/api/otel-media'
     | '/api/otel-transcription'
     | '/api/otel-usage'
+    | '/api/own-key-schema-wire'
     | '/api/persistence-durability'
     | '/api/portable-skills-wire'
     | '/api/prompt-cache-wire'
@@ -1776,6 +1786,7 @@ export interface FileRouteTypes {
     | '/api/otel-media'
     | '/api/otel-transcription'
     | '/api/otel-usage'
+    | '/api/own-key-schema-wire'
     | '/api/persistence-durability'
     | '/api/portable-skills-wire'
     | '/api/prompt-cache-wire'
@@ -1937,6 +1948,7 @@ export interface FileRouteTypes {
     | '/api/otel-media'
     | '/api/otel-transcription'
     | '/api/otel-usage'
+    | '/api/own-key-schema-wire'
     | '/api/persistence-durability'
     | '/api/portable-skills-wire'
     | '/api/prompt-cache-wire'
@@ -2099,6 +2111,7 @@ export interface RootRouteChildren {
   ApiOtelMediaRoute: typeof ApiOtelMediaRoute
   ApiOtelTranscriptionRoute: typeof ApiOtelTranscriptionRoute
   ApiOtelUsageRoute: typeof ApiOtelUsageRoute
+  ApiOwnKeySchemaWireRoute: typeof ApiOwnKeySchemaWireRoute
   ApiPersistenceDurabilityRoute: typeof ApiPersistenceDurabilityRoute
   ApiPortableSkillsWireRoute: typeof ApiPortableSkillsWireRoute
   ApiPromptCacheWireRoute: typeof ApiPromptCacheWireRoute
@@ -3020,6 +3033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOtelUsageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/own-key-schema-wire': {
+      id: '/api/own-key-schema-wire'
+      path: '/api/own-key-schema-wire'
+      fullPath: '/api/own-key-schema-wire'
+      preLoaderRoute: typeof ApiOwnKeySchemaWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/persistence-durability': {
       id: '/api/persistence-durability'
       path: '/api/persistence-durability'
@@ -3436,6 +3456,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOtelMediaRoute: ApiOtelMediaRoute,
   ApiOtelTranscriptionRoute: ApiOtelTranscriptionRoute,
   ApiOtelUsageRoute: ApiOtelUsageRoute,
+  ApiOwnKeySchemaWireRoute: ApiOwnKeySchemaWireRoute,
   ApiPersistenceDurabilityRoute: ApiPersistenceDurabilityRoute,
   ApiPortableSkillsWireRoute: ApiPortableSkillsWireRoute,
   ApiPromptCacheWireRoute: ApiPromptCacheWireRoute,
