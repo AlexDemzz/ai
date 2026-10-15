@@ -180,6 +180,12 @@ export default async function globalSetup() {
   // `usage` survives onto `RUN_FINISHED.usage` on the fallback path.
   mock.mount('/anthropic-structured-usage', anthropicStructuredUsageMount())
 
+  // decide() usage on a failed answer mapping. aimock has no OpenAI Decisions
+  // endpoint, so this mount hand-crafts a `/v1/decisions` response with valid
+  // usage and a choice with no entry in `probabilities`. The companion spec
+  // asserts `decide()` rejects and still reports that usage.
+  mock.mount('/evaluate-usage-on-failure', evaluateUsageOnFailureMount())
+
   // BytePlus. Ark (chat, Seedream image, Seedance video) serves its whole data
   // plane under /api/v3, and Seed Speech (TTS/ASR) mounts its own endpoints at
   // the same prefix on a different host — which collapses onto one prefix here
@@ -2244,6 +2250,52 @@ function anthropicStructuredUsageMount(): Mountable {
             input_tokens: 125,
             output_tokens: 1346,
             cache_read_input_tokens: 5760,
+          },
+        }),
+      )
+      return true
+    },
+  }
+}
+
+/**
+ * Mounts the OpenAI Decisions `/v1/decisions` response for the
+ * `evaluate-usage-on-failure` spec: valid usage, but a `queue` answer whose
+ * choice (`sales`) has no entry in `probabilities`, so `decide()` throws
+ * "missing probability for choice".
+ */
+function evaluateUsageOnFailureMount(): Mountable {
+  return {
+    async handleRequest(
+      req: http.IncomingMessage,
+      res: http.ServerResponse,
+      pathname: string,
+    ): Promise<boolean> {
+      if (req.method !== 'POST' || pathname !== '/v1/decisions') {
+        return false
+      }
+      await drainBody(req)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/json')
+      res.end(
+        JSON.stringify({
+          model: 'gpt-6-luna',
+          answers: [
+            {
+              type: 'choice',
+              name: 'queue',
+              choice: 'sales',
+              confidence: 0.9,
+              probabilities: [
+                { value: 'billing', probability: 0.6 },
+                { value: 'tech', probability: 0.4 },
+              ],
+            },
+          ],
+          usage: {
+            input_tokens: 42,
+            output_tokens: 7,
+            total_tokens: 49,
           },
         }),
       )
