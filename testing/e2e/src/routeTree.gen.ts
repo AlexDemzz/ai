@@ -111,6 +111,9 @@ import { Route as ApiMaxToolCallsWireRouteImport } from './routes/api.max-tool-c
 import { Route as ApiMcpAppsCallRouteImport } from './routes/api.mcp-apps-call'
 import { Route as ApiMcpAppsChatRouteImport } from './routes/api.mcp-apps-chat'
 import { Route as ApiMcpAppsServerRouteImport } from './routes/api.mcp-apps-server'
+import { Route as ApiMcpEventsControlRouteImport } from './routes/api.mcp-events-control'
+import { Route as ApiMcpEventsServerRouteImport } from './routes/api.mcp-events-server'
+import { Route as ApiMcpEventsWebhookRouteImport } from './routes/api.mcp-events-webhook'
 import { Route as ApiMcpInputServerRouteImport } from './routes/api.mcp-input-server'
 import { Route as ApiMcpInputTestRouteImport } from './routes/api.mcp-input-test'
 import { Route as ApiMcpLifecycleTestRouteImport } from './routes/api.mcp-lifecycle-test'
@@ -722,6 +725,21 @@ const ApiMcpAppsServerRoute = ApiMcpAppsServerRouteImport.update({
   path: '/api/mcp-apps-server',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMcpEventsControlRoute = ApiMcpEventsControlRouteImport.update({
+  id: '/api/mcp-events-control',
+  path: '/api/mcp-events-control',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpEventsServerRoute = ApiMcpEventsServerRouteImport.update({
+  id: '/api/mcp-events-server',
+  path: '/api/mcp-events-server',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpEventsWebhookRoute = ApiMcpEventsWebhookRouteImport.update({
+  id: '/api/mcp-events-webhook',
+  path: '/api/mcp-events-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMcpInputServerRoute = ApiMcpInputServerRouteImport.update({
   id: '/api/mcp-input-server',
   path: '/api/mcp-input-server',
@@ -1227,6 +1245,9 @@ export interface FileRoutesByFullPath {
   '/api/mcp-apps-call': typeof ApiMcpAppsCallRoute
   '/api/mcp-apps-chat': typeof ApiMcpAppsChatRoute
   '/api/mcp-apps-server': typeof ApiMcpAppsServerRoute
+  '/api/mcp-events-control': typeof ApiMcpEventsControlRoute
+  '/api/mcp-events-server': typeof ApiMcpEventsServerRoute
+  '/api/mcp-events-webhook': typeof ApiMcpEventsWebhookRoute
   '/api/mcp-input-server': typeof ApiMcpInputServerRoute
   '/api/mcp-input-test': typeof ApiMcpInputTestRoute
   '/api/mcp-lifecycle-test': typeof ApiMcpLifecycleTestRoute
@@ -1407,6 +1428,9 @@ export interface FileRoutesByTo {
   '/api/mcp-apps-call': typeof ApiMcpAppsCallRoute
   '/api/mcp-apps-chat': typeof ApiMcpAppsChatRoute
   '/api/mcp-apps-server': typeof ApiMcpAppsServerRoute
+  '/api/mcp-events-control': typeof ApiMcpEventsControlRoute
+  '/api/mcp-events-server': typeof ApiMcpEventsServerRoute
+  '/api/mcp-events-webhook': typeof ApiMcpEventsWebhookRoute
   '/api/mcp-input-server': typeof ApiMcpInputServerRoute
   '/api/mcp-input-test': typeof ApiMcpInputTestRoute
   '/api/mcp-lifecycle-test': typeof ApiMcpLifecycleTestRoute
@@ -1588,6 +1612,9 @@ export interface FileRoutesById {
   '/api/mcp-apps-call': typeof ApiMcpAppsCallRoute
   '/api/mcp-apps-chat': typeof ApiMcpAppsChatRoute
   '/api/mcp-apps-server': typeof ApiMcpAppsServerRoute
+  '/api/mcp-events-control': typeof ApiMcpEventsControlRoute
+  '/api/mcp-events-server': typeof ApiMcpEventsServerRoute
+  '/api/mcp-events-webhook': typeof ApiMcpEventsWebhookRoute
   '/api/mcp-input-server': typeof ApiMcpInputServerRoute
   '/api/mcp-input-test': typeof ApiMcpInputTestRoute
   '/api/mcp-lifecycle-test': typeof ApiMcpLifecycleTestRoute
@@ -1770,6 +1797,9 @@ export interface FileRouteTypes {
     | '/api/mcp-apps-call'
     | '/api/mcp-apps-chat'
     | '/api/mcp-apps-server'
+    | '/api/mcp-events-control'
+    | '/api/mcp-events-server'
+    | '/api/mcp-events-webhook'
     | '/api/mcp-input-server'
     | '/api/mcp-input-test'
     | '/api/mcp-lifecycle-test'
@@ -1950,6 +1980,9 @@ export interface FileRouteTypes {
     | '/api/mcp-apps-call'
     | '/api/mcp-apps-chat'
     | '/api/mcp-apps-server'
+    | '/api/mcp-events-control'
+    | '/api/mcp-events-server'
+    | '/api/mcp-events-webhook'
     | '/api/mcp-input-server'
     | '/api/mcp-input-test'
     | '/api/mcp-lifecycle-test'
@@ -2130,6 +2163,9 @@ export interface FileRouteTypes {
     | '/api/mcp-apps-call'
     | '/api/mcp-apps-chat'
     | '/api/mcp-apps-server'
+    | '/api/mcp-events-control'
+    | '/api/mcp-events-server'
+    | '/api/mcp-events-webhook'
     | '/api/mcp-input-server'
     | '/api/mcp-input-test'
     | '/api/mcp-lifecycle-test'
@@ -2311,6 +2347,9 @@ export interface RootRouteChildren {
   ApiMcpAppsCallRoute: typeof ApiMcpAppsCallRoute
   ApiMcpAppsChatRoute: typeof ApiMcpAppsChatRoute
   ApiMcpAppsServerRoute: typeof ApiMcpAppsServerRoute
+  ApiMcpEventsControlRoute: typeof ApiMcpEventsControlRoute
+  ApiMcpEventsServerRoute: typeof ApiMcpEventsServerRoute
+  ApiMcpEventsWebhookRoute: typeof ApiMcpEventsWebhookRoute
   ApiMcpInputServerRoute: typeof ApiMcpInputServerRoute
   ApiMcpInputTestRoute: typeof ApiMcpInputTestRoute
   ApiMcpLifecycleTestRoute: typeof ApiMcpLifecycleTestRoute
@@ -3101,6 +3140,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpAppsServerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mcp-events-control': {
+      id: '/api/mcp-events-control'
+      path: '/api/mcp-events-control'
+      fullPath: '/api/mcp-events-control'
+      preLoaderRoute: typeof ApiMcpEventsControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp-events-server': {
+      id: '/api/mcp-events-server'
+      path: '/api/mcp-events-server'
+      fullPath: '/api/mcp-events-server'
+      preLoaderRoute: typeof ApiMcpEventsServerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp-events-webhook': {
+      id: '/api/mcp-events-webhook'
+      path: '/api/mcp-events-webhook'
+      fullPath: '/api/mcp-events-webhook'
+      preLoaderRoute: typeof ApiMcpEventsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mcp-input-server': {
       id: '/api/mcp-input-server'
       path: '/api/mcp-input-server'
@@ -3801,6 +3861,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMcpAppsCallRoute: ApiMcpAppsCallRoute,
   ApiMcpAppsChatRoute: ApiMcpAppsChatRoute,
   ApiMcpAppsServerRoute: ApiMcpAppsServerRoute,
+  ApiMcpEventsControlRoute: ApiMcpEventsControlRoute,
+  ApiMcpEventsServerRoute: ApiMcpEventsServerRoute,
+  ApiMcpEventsWebhookRoute: ApiMcpEventsWebhookRoute,
   ApiMcpInputServerRoute: ApiMcpInputServerRoute,
   ApiMcpInputTestRoute: ApiMcpInputTestRoute,
   ApiMcpLifecycleTestRoute: ApiMcpLifecycleTestRoute,
