@@ -64,6 +64,7 @@ import { Route as ApiAnthropicRedactedThinkingWireRouteImport } from './routes/a
 import { Route as ApiAnthropicRefusalRouteImport } from './routes/api.anthropic-refusal'
 import { Route as ApiAnthropicSkillsWireRouteImport } from './routes/api.anthropic-skills-wire'
 import { Route as ApiAnthropicSonnet55WireRouteImport } from './routes/api.anthropic-sonnet-5-5-wire'
+import { Route as ApiAnthropicStreamFailureUsageRouteImport } from './routes/api.anthropic-stream-failure-usage'
 import { Route as ApiAnthropicThinkingOrderWireRouteImport } from './routes/api.anthropic-thinking-order-wire'
 import { Route as ApiAnthropicTruncatedToolInputWireRouteImport } from './routes/api.anthropic-truncated-tool-input-wire'
 import { Route as ApiArktypeToolWireRouteImport } from './routes/api.arktype-tool-wire'
@@ -491,6 +492,12 @@ const ApiAnthropicSonnet55WireRoute =
   ApiAnthropicSonnet55WireRouteImport.update({
     id: '/api/anthropic-sonnet-5-5-wire',
     path: '/api/anthropic-sonnet-5-5-wire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAnthropicStreamFailureUsageRoute =
+  ApiAnthropicStreamFailureUsageRouteImport.update({
+    id: '/api/anthropic-stream-failure-usage',
+    path: '/api/anthropic-stream-failure-usage',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiAnthropicThinkingOrderWireRoute =
@@ -1296,6 +1303,7 @@ export interface FileRoutesByFullPath {
   '/api/anthropic-refusal': typeof ApiAnthropicRefusalRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-sonnet-5-5-wire': typeof ApiAnthropicSonnet55WireRoute
+  '/api/anthropic-stream-failure-usage': typeof ApiAnthropicStreamFailureUsageRoute
   '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/anthropic-truncated-tool-input-wire': typeof ApiAnthropicTruncatedToolInputWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
@@ -1495,6 +1503,7 @@ export interface FileRoutesByTo {
   '/api/anthropic-refusal': typeof ApiAnthropicRefusalRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-sonnet-5-5-wire': typeof ApiAnthropicSonnet55WireRoute
+  '/api/anthropic-stream-failure-usage': typeof ApiAnthropicStreamFailureUsageRoute
   '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/anthropic-truncated-tool-input-wire': typeof ApiAnthropicTruncatedToolInputWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
@@ -1695,6 +1704,7 @@ export interface FileRoutesById {
   '/api/anthropic-refusal': typeof ApiAnthropicRefusalRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-sonnet-5-5-wire': typeof ApiAnthropicSonnet55WireRoute
+  '/api/anthropic-stream-failure-usage': typeof ApiAnthropicStreamFailureUsageRoute
   '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/anthropic-truncated-tool-input-wire': typeof ApiAnthropicTruncatedToolInputWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
@@ -1896,6 +1906,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-refusal'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-sonnet-5-5-wire'
+    | '/api/anthropic-stream-failure-usage'
     | '/api/anthropic-thinking-order-wire'
     | '/api/anthropic-truncated-tool-input-wire'
     | '/api/arktype-tool-wire'
@@ -2095,6 +2106,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-refusal'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-sonnet-5-5-wire'
+    | '/api/anthropic-stream-failure-usage'
     | '/api/anthropic-thinking-order-wire'
     | '/api/anthropic-truncated-tool-input-wire'
     | '/api/arktype-tool-wire'
@@ -2294,6 +2306,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-refusal'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-sonnet-5-5-wire'
+    | '/api/anthropic-stream-failure-usage'
     | '/api/anthropic-thinking-order-wire'
     | '/api/anthropic-truncated-tool-input-wire'
     | '/api/arktype-tool-wire'
@@ -2494,6 +2507,7 @@ export interface RootRouteChildren {
   ApiAnthropicRefusalRoute: typeof ApiAnthropicRefusalRoute
   ApiAnthropicSkillsWireRoute: typeof ApiAnthropicSkillsWireRoute
   ApiAnthropicSonnet55WireRoute: typeof ApiAnthropicSonnet55WireRoute
+  ApiAnthropicStreamFailureUsageRoute: typeof ApiAnthropicStreamFailureUsageRoute
   ApiAnthropicThinkingOrderWireRoute: typeof ApiAnthropicThinkingOrderWireRoute
   ApiAnthropicTruncatedToolInputWireRoute: typeof ApiAnthropicTruncatedToolInputWireRoute
   ApiArktypeToolWireRoute: typeof ApiArktypeToolWireRoute
@@ -3019,6 +3033,13 @@ declare module '@tanstack/react-router' {
       path: '/api/anthropic-sonnet-5-5-wire'
       fullPath: '/api/anthropic-sonnet-5-5-wire'
       preLoaderRoute: typeof ApiAnthropicSonnet55WireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/anthropic-stream-failure-usage': {
+      id: '/api/anthropic-stream-failure-usage'
+      path: '/api/anthropic-stream-failure-usage'
+      fullPath: '/api/anthropic-stream-failure-usage'
+      preLoaderRoute: typeof ApiAnthropicStreamFailureUsageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/anthropic-thinking-order-wire': {
@@ -4132,6 +4153,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAnthropicRefusalRoute: ApiAnthropicRefusalRoute,
   ApiAnthropicSkillsWireRoute: ApiAnthropicSkillsWireRoute,
   ApiAnthropicSonnet55WireRoute: ApiAnthropicSonnet55WireRoute,
+  ApiAnthropicStreamFailureUsageRoute: ApiAnthropicStreamFailureUsageRoute,
   ApiAnthropicThinkingOrderWireRoute: ApiAnthropicThinkingOrderWireRoute,
   ApiAnthropicTruncatedToolInputWireRoute:
     ApiAnthropicTruncatedToolInputWireRoute,
