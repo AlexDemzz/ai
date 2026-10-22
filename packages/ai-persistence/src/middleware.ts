@@ -450,6 +450,43 @@ function rejectMixedRunPending(
   ])
 }
 
+/**
+ * The pending records this run answers itself. A record that a child raised
+ * names that child in `subagentRunId`. The engine splits the resume with the
+ * subagent cards that the client sent (`ctx.childResumeIds`). That split must
+ * match the stored records, or a forged card could move an interrupt between
+ * the parent and a child.
+ */
+function rejectForgedChildSplit(
+  pending: Array<InterruptRecord>,
+  ctx: Pick<ChatMiddlewareContext, 'threadId' | 'runId' | 'childResumeIds'>,
+): Array<InterruptRecord> {
+  const childIds = pending
+    .filter((interrupt) => stringField(interrupt.payload, 'subagentRunId'))
+    .map((interrupt) => interrupt.interruptId)
+  const claimed = ctx.childResumeIds ?? new Set<string>()
+  if (
+    claimed.size !== childIds.length ||
+    childIds.some((id) => !claimed.has(id))
+  ) {
+    throw new InterruptResumeValidationError([
+      {
+        scope: 'batch',
+        threadId: ctx.threadId,
+        interruptedRunId: pending[0]?.runId ?? ctx.runId,
+        generation: 0,
+        interruptIds: pending.map((interrupt) => interrupt.interruptId),
+        code: 'conflict',
+        message:
+          'The subagent cards in the messages do not match the stored subagent interrupts.',
+        source: 'client',
+        retryable: false,
+      },
+    ])
+  }
+  return pending.filter((interrupt) => !claimed.has(interrupt.interruptId))
+}
+
 function validatePendingResumes(
   pending: Array<InterruptRecord>,
   resume: Array<RunAgentResumeItem> | undefined,
@@ -2252,13 +2289,16 @@ export function withPersistence<TStores extends ChatTranscriptStores>(
         // (which needs a parentRunId and the client message history the
         // persistence flow deliberately omits).
         if ((config.resume?.length ?? 0) > 0) {
+          // A subagent tool call answers its own interrupts against its own
+          // tools. They are still committed below with the rest of the batch.
+          const runPending = rejectForgedChildSplit(ownedPending, ctx)
           const resumeToolState = resumeToolStateFromPending(
-            ownedPending,
+            runPending,
             resumeByInterruptId,
           )
           const genericResumeState = await durableGenericResumeState(
             ctx,
-            ownedPending,
+            runPending,
             config.resume ?? [],
             config.tools,
           )

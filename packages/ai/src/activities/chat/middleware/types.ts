@@ -210,6 +210,13 @@ export interface ChatMiddlewareContext<TContext = unknown> {
   /** The subagentRunId of the child that started this one, for a nested child. */
   parentSubagentRunId?: string
   /**
+   * Interrupt ids in `resume` that a subagent tool call of this run answers.
+   * This run does not answer them itself. They come from the subagent cards in
+   * the messages the client sent. `undefined` when no child is resumed, and
+   * for a router turn.
+   */
+  childResumeIds?: ReadonlySet<string>
+  /**
    * AG-UI thread identifier — a stable per-conversation ID used to
    * correlate client and server devtools events. Resolves to the
    * caller-provided `threadId` (or legacy `conversationId`), or an
