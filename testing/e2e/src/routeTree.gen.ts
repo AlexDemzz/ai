@@ -147,6 +147,7 @@ import { Route as ApiMiddlewareTestRouteImport } from './routes/api.middleware-t
 import { Route as ApiMistralStrictToolNullWireRouteImport } from './routes/api.mistral-strict-tool-null-wire'
 import { Route as ApiMoonshotUsageDetailsRouteImport } from './routes/api.moonshot-usage-details'
 import { Route as ApiMultimodalToolResultWireRouteImport } from './routes/api.multimodal-tool-result-wire'
+import { Route as ApiNeonWireRouteImport } from './routes/api.neon-wire'
 import { Route as ApiNonStreamingRunErrorRouteImport } from './routes/api.non-streaming-run-error'
 import { Route as ApiOpenaiCompletedResponseTextRouteImport } from './routes/api.openai-completed-response-text'
 import { Route as ApiOpenaiComputerUseWireRouteImport } from './routes/api.openai-computer-use-wire'
@@ -927,6 +928,11 @@ const ApiMultimodalToolResultWireRoute =
     path: '/api/multimodal-tool-result-wire',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiNeonWireRoute = ApiNeonWireRouteImport.update({
+  id: '/api/neon-wire',
+  path: '/api/neon-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNonStreamingRunErrorRoute = ApiNonStreamingRunErrorRouteImport.update({
   id: '/api/non-streaming-run-error',
   path: '/api/non-streaming-run-error',
@@ -1392,6 +1398,7 @@ export interface FileRoutesByFullPath {
   '/api/mistral-strict-tool-null-wire': typeof ApiMistralStrictToolNullWireRoute
   '/api/moonshot-usage-details': typeof ApiMoonshotUsageDetailsRoute
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
+  '/api/neon-wire': typeof ApiNeonWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
   '/api/openai-computer-use-wire': typeof ApiOpenaiComputerUseWireRoute
@@ -1593,6 +1600,7 @@ export interface FileRoutesByTo {
   '/api/mistral-strict-tool-null-wire': typeof ApiMistralStrictToolNullWireRoute
   '/api/moonshot-usage-details': typeof ApiMoonshotUsageDetailsRoute
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
+  '/api/neon-wire': typeof ApiNeonWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
   '/api/openai-computer-use-wire': typeof ApiOpenaiComputerUseWireRoute
@@ -1795,6 +1803,7 @@ export interface FileRoutesById {
   '/api/mistral-strict-tool-null-wire': typeof ApiMistralStrictToolNullWireRoute
   '/api/moonshot-usage-details': typeof ApiMoonshotUsageDetailsRoute
   '/api/multimodal-tool-result-wire': typeof ApiMultimodalToolResultWireRoute
+  '/api/neon-wire': typeof ApiNeonWireRoute
   '/api/non-streaming-run-error': typeof ApiNonStreamingRunErrorRoute
   '/api/openai-completed-response-text': typeof ApiOpenaiCompletedResponseTextRoute
   '/api/openai-computer-use-wire': typeof ApiOpenaiComputerUseWireRoute
@@ -1998,6 +2007,7 @@ export interface FileRouteTypes {
     | '/api/mistral-strict-tool-null-wire'
     | '/api/moonshot-usage-details'
     | '/api/multimodal-tool-result-wire'
+    | '/api/neon-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
     | '/api/openai-computer-use-wire'
@@ -2199,6 +2209,7 @@ export interface FileRouteTypes {
     | '/api/mistral-strict-tool-null-wire'
     | '/api/moonshot-usage-details'
     | '/api/multimodal-tool-result-wire'
+    | '/api/neon-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
     | '/api/openai-computer-use-wire'
@@ -2400,6 +2411,7 @@ export interface FileRouteTypes {
     | '/api/mistral-strict-tool-null-wire'
     | '/api/moonshot-usage-details'
     | '/api/multimodal-tool-result-wire'
+    | '/api/neon-wire'
     | '/api/non-streaming-run-error'
     | '/api/openai-completed-response-text'
     | '/api/openai-computer-use-wire'
@@ -2602,6 +2614,7 @@ export interface RootRouteChildren {
   ApiMistralStrictToolNullWireRoute: typeof ApiMistralStrictToolNullWireRoute
   ApiMoonshotUsageDetailsRoute: typeof ApiMoonshotUsageDetailsRoute
   ApiMultimodalToolResultWireRoute: typeof ApiMultimodalToolResultWireRoute
+  ApiNeonWireRoute: typeof ApiNeonWireRoute
   ApiNonStreamingRunErrorRoute: typeof ApiNonStreamingRunErrorRoute
   ApiOpenaiCompletedResponseTextRoute: typeof ApiOpenaiCompletedResponseTextRoute
   ApiOpenaiComputerUseWireRoute: typeof ApiOpenaiComputerUseWireRoute
@@ -3629,6 +3642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMultimodalToolResultWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/neon-wire': {
+      id: '/api/neon-wire'
+      path: '/api/neon-wire'
+      fullPath: '/api/neon-wire'
+      preLoaderRoute: typeof ApiNeonWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/non-streaming-run-error': {
       id: '/api/non-streaming-run-error'
       path: '/api/non-streaming-run-error'
@@ -4260,6 +4280,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMistralStrictToolNullWireRoute: ApiMistralStrictToolNullWireRoute,
   ApiMoonshotUsageDetailsRoute: ApiMoonshotUsageDetailsRoute,
   ApiMultimodalToolResultWireRoute: ApiMultimodalToolResultWireRoute,
+  ApiNeonWireRoute: ApiNeonWireRoute,
   ApiNonStreamingRunErrorRoute: ApiNonStreamingRunErrorRoute,
   ApiOpenaiCompletedResponseTextRoute: ApiOpenaiCompletedResponseTextRoute,
   ApiOpenaiComputerUseWireRoute: ApiOpenaiComputerUseWireRoute,

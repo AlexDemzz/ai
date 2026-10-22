@@ -1830,6 +1830,11 @@
           "updatedAt": "2026-10-22"
         },
         {
+          "label": "Neon AI Gateway",
+          "to": "adapters/neon",
+          "addedAt": "2026-10-21"
+        },
+        {
           "label": "Claude Code",
           "to": "adapters/claude-code",
           "addedAt": "2026-06-12",
