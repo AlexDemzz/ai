@@ -344,28 +344,6 @@ function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-function generateRunId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-/**
- * Asserts an id is present when synthesizing a terminal event. The chat
- * client always supplies `runContext.threadId` / `runContext.runId`, so an
- * absent id at this layer indicates the adapter was wired up by a caller
- * that bypassed that contract — surface it rather than fabricating one.
- */
-function requireSyntheticId(
-  value: string | undefined,
-  field: 'threadId' | 'runId',
-): string {
-  if (!value) {
-    throw new Error(
-      `Cannot synthesize terminal event: ${field} not supplied via runContext and not observed in the upstream stream.`,
-    )
-  }
-  return value
-}
-
 /**
  * Merge custom headers into request headers
  */
@@ -396,8 +374,8 @@ function mergeHeaders(
  */
 const RUN_ID_HEADER = 'X-Run-Id'
 
-function runIdHeader(runId: string | undefined): Record<string, string> {
-  return runId === undefined ? {} : { [RUN_ID_HEADER]: runId }
+function runIdHeader(runId: string): Record<string, string> {
+  return { [RUN_ID_HEADER]: runId }
 }
 
 function withSearchParams(url: string, values: Record<string, string>): string {
@@ -1099,6 +1077,12 @@ export interface ChatHydrationResult {
     pending: Array<ChatPendingInterrupt>
   } | null
   /**
+   * Every wait of the thread, also one with no interrupt, for example a
+   * question that a tool asks. A harness server sends the `pendingWaits` of
+   * its snapshot. Old servers omit it.
+   */
+  pendingWaits?: Array<unknown>
+  /**
    * Whether this window is a slice of a longer thread.
    * `cursor` is set when `truncated` is true and is sent back as `before`.
    */
@@ -1311,7 +1295,7 @@ export function normalizeConnectionAdapter(
           if (chunk.type === 'RUN_FINISHED' || chunk.type === 'RUN_ERROR') {
             hasTerminalEvent = true
           }
-          push(chunk, runContext?.runId)
+          push(chunk, runContext.runId)
         }
 
         // If the connect stream ended cleanly without a terminal event,
@@ -1324,47 +1308,27 @@ export function normalizeConnectionAdapter(
             withTanstackMetadata(
               {
                 type: EventType.RUN_FINISHED,
-                threadId: requireSyntheticId(
-                  upstreamThreadId ?? runContext?.threadId,
-                  'threadId',
-                ),
-                runId: requireSyntheticId(
-                  upstreamRunId ?? runContext?.runId,
-                  'runId',
-                ),
+                threadId: upstreamThreadId ?? runContext.threadId,
+                runId: upstreamRunId ?? runContext.runId,
                 timestamp: Date.now(),
               },
               { finishReason: 'stop', model: 'connect-wrapper' },
             ) as StreamChunk,
-            runContext?.runId,
+            runContext.runId,
           )
         }
       } catch (err) {
         if (!abortSignal?.aborted && !hasTerminalEvent) {
-          // Guard synthesis: requireSyntheticId throws when no id is available,
-          // and that must not replace the original `err` we are about to
-          // rethrow. If we can't synthesize a terminal, the real failure still
-          // surfaces below.
-          try {
-            const message =
-              err instanceof Error ? err.message : 'Unknown error in connect()'
-            const synthetic: RunErrorEvent = {
-              type: EventType.RUN_ERROR,
-              threadId: requireSyntheticId(
-                upstreamThreadId ?? runContext?.threadId,
-                'threadId',
-              ),
-              runId: requireSyntheticId(
-                upstreamRunId ?? runContext?.runId,
-                'runId',
-              ),
-              timestamp: Date.now(),
-              message,
-            }
-            push(synthetic, runContext?.runId)
-          } catch {
-            // fall through to rethrow the original error
+          const message =
+            err instanceof Error ? err.message : 'Unknown error in connect()'
+          const synthetic: RunErrorEvent = {
+            type: EventType.RUN_ERROR,
+            threadId: upstreamThreadId ?? runContext.threadId,
+            runId: upstreamRunId ?? runContext.runId,
+            timestamp: Date.now(),
+            message,
           }
+          push(synthetic, runContext.runId)
         }
         throw err
       }
@@ -1451,7 +1415,7 @@ function buildRunAgentInputBody(
 
   return {
     threadId: runContext.threadId,
-    runId: runContext.runId ?? generateRunId('run'),
+    runId: runContext.runId,
     ...(runContext.parentRunId !== undefined && {
       parentRunId: runContext.parentRunId,
     }),
@@ -1514,8 +1478,8 @@ export function fetchServerSentEvents(
       const requestHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
         ...mergeHeaders(resolvedOptions.headers),
-        ...mergeHeaders(runContext?.headers),
-        ...runIdHeader(runContext?.runId),
+        ...mergeHeaders(runContext.headers),
+        ...runIdHeader(runContext.runId),
       }
 
       // Build AG-UI RunAgentInput payload.
@@ -1674,8 +1638,8 @@ export function fetchHttpStream(
       const requestHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
         ...mergeHeaders(resolvedOptions.headers),
-        ...mergeHeaders(runContext?.headers),
-        ...runIdHeader(runContext?.runId),
+        ...mergeHeaders(runContext.headers),
+        ...runIdHeader(runContext.runId),
       }
 
       // Build AG-UI RunAgentInput payload.
@@ -1987,8 +1951,8 @@ export function fetchJson(
           'Content-Type': 'application/json',
           Accept: 'application/json',
           ...mergeHeaders(resolvedOptions.headers),
-          ...mergeHeaders(runContext?.headers),
-          ...runIdHeader(runContext?.runId),
+          ...mergeHeaders(runContext.headers),
+          ...runIdHeader(runContext.runId),
         },
         body: JSON.stringify(requestBody),
       }
@@ -2206,10 +2170,10 @@ function createConfiguredXhrRequest(
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...mergeHeaders(options.headers),
-    ...mergeHeaders(method === 'POST' ? runContext?.headers : undefined),
+    ...mergeHeaders(runContext?.headers),
     // Client-chosen run id for durability (POST only; the GET join carries it
     // in the query instead).
-    ...(method === 'POST' ? runIdHeader(runContext?.runId) : {}),
+    ...(runContext ? runIdHeader(runContext.runId) : {}),
     // Reconnect offset (`Last-Event-ID`) wins over static headers.
     ...extraHeaders,
   }
@@ -2453,8 +2417,8 @@ export interface WebSocketConnectionOptions {
   WebSocketImpl?: typeof WebSocket
 }
 
-function runIdQuery(url: string, runId: string | undefined): string {
-  return runId ? withSearchParams(url, { runId }) : url
+function runIdQuery(url: string, runId: string): string {
+  return withSearchParams(url, { runId })
 }
 
 function isPingFrame(parsed: unknown): boolean {
@@ -2743,16 +2707,16 @@ export function webSocket(
     },
     async send(messages, data, abortSignal, runContext) {
       const target = typeof url === 'function' ? url() : url
-      const ws = openOnce(runIdQuery(target, runContext?.runId), 'run')
+      const ws = openOnce(runIdQuery(target, runContext.runId), 'run')
       await waitOpen(ws)
       // Establish (or continue) the run session this socket is driving, so
       // an unterminated drop can auto-resume it. A distinct runId starts a
       // fresh tracker (a new run's offsets are unrelated to the last one's);
       // the same runId reuses the tracker so a repeat send() on an
       // already-tracked run doesn't lose its de-dupe/offset state.
-      if (!currentSession || currentSession.runId !== runContext?.runId) {
+      if (!currentSession || currentSession.runId !== runContext.runId) {
         currentSession = {
-          runId: runContext?.runId,
+          runId: runContext.runId,
           tracker: createReconnectTracker(options.reconnect),
           sawTerminal: false,
           progressed: false,
