@@ -24,11 +24,7 @@ import type {
   InterruptDefinition,
 } from '@tanstack/ai/adapter-internals'
 import { base64ToUint8Array } from '@tanstack/ai-utils'
-import {
-  mergeMetadata,
-  tanstackMetadata,
-  withTanstackMetadata,
-} from '@tanstack/ai/client'
+import { mergeMetadata, withTanstackMetadata } from '@tanstack/ai/client'
 import {
   InterruptsCapability,
   PersistenceCapability,
@@ -2346,30 +2342,9 @@ export function withPersistence<TStores extends ChatTranscriptStores>(
         !('subagentRunId' in chunk) || chunk.subagentRunId === undefined
       if (snapshotStreaming && isParentChunk && current) {
         if (chunk.type === 'RUN_STARTED') resetStreaming(current)
-        // Keep the call metadata (source, response id) for the snapshot rows.
-        const tanstack = tanstackMetadata(chunk)
-        const metadata =
-          chunk.type === 'TOOL_CALL_START'
-            ? tanstack === undefined
-              ? undefined
-              : { tanstack }
-            : chunk.metadata
-        current.streamingMetadata = mergeMetadata(
-          current.streamingMetadata,
-          metadata,
-        )
-        if (chunk.type === 'RUN_FINISHED') {
-          current.streamingMetadata = withTanstackMetadata(
-            { metadata: current.streamingMetadata },
-            {
-              ...(chunk.responseId !== undefined
-                ? { responseId: chunk.responseId }
-                : {}),
-              ...(chunk.model !== undefined ? { model: chunk.model } : {}),
-            },
-          ).metadata
-          await updateStreamingRows(ctx)
-        }
+        // The same call metadata that a finished assistant message gets.
+        current.streamingMetadata = { tanstack: { ...ctx.callMetadata } }
+        if (chunk.type === 'RUN_FINISHED') await updateStreamingRows(ctx)
       }
       // Capture the current assistant turn's identity for optional in-progress
       // snapshots. Completed messages already live in `ctx.messages`.
