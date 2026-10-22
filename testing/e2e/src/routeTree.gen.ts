@@ -93,6 +93,7 @@ import { Route as ApiDurableDeliveryRouteImport } from './routes/api.durable-del
 import { Route as ApiDurableTakeoverRouteImport } from './routes/api.durable-takeover'
 import { Route as ApiEmbeddingRouteImport } from './routes/api.embedding'
 import { Route as ApiEvaluateHttpStatusRouteImport } from './routes/api.evaluate-http-status'
+import { Route as ApiEvaluateRefusalRouteImport } from './routes/api.evaluate-refusal'
 import { Route as ApiEvaluateUsageOnFailureRouteImport } from './routes/api.evaluate-usage-on-failure'
 import { Route as ApiFakeTextRouteImport } from './routes/api.fake-text'
 import { Route as ApiFileSourceWireRouteImport } from './routes/api.file-source-wire'
@@ -647,6 +648,11 @@ const ApiEmbeddingRoute = ApiEmbeddingRouteImport.update({
 const ApiEvaluateHttpStatusRoute = ApiEvaluateHttpStatusRouteImport.update({
   id: '/api/evaluate-http-status',
   path: '/api/evaluate-http-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEvaluateRefusalRoute = ApiEvaluateRefusalRouteImport.update({
+  id: '/api/evaluate-refusal',
+  path: '/api/evaluate-refusal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEvaluateUsageOnFailureRoute =
@@ -1332,6 +1338,7 @@ export interface FileRoutesByFullPath {
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/evaluate-http-status': typeof ApiEvaluateHttpStatusRoute
+  '/api/evaluate-refusal': typeof ApiEvaluateRefusalRoute
   '/api/evaluate-usage-on-failure': typeof ApiEvaluateUsageOnFailureRoute
   '/api/fake-text': typeof ApiFakeTextRoute
   '/api/file-source-wire': typeof ApiFileSourceWireRoute
@@ -1532,6 +1539,7 @@ export interface FileRoutesByTo {
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/evaluate-http-status': typeof ApiEvaluateHttpStatusRoute
+  '/api/evaluate-refusal': typeof ApiEvaluateRefusalRoute
   '/api/evaluate-usage-on-failure': typeof ApiEvaluateUsageOnFailureRoute
   '/api/fake-text': typeof ApiFakeTextRoute
   '/api/file-source-wire': typeof ApiFileSourceWireRoute
@@ -1733,6 +1741,7 @@ export interface FileRoutesById {
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/evaluate-http-status': typeof ApiEvaluateHttpStatusRoute
+  '/api/evaluate-refusal': typeof ApiEvaluateRefusalRoute
   '/api/evaluate-usage-on-failure': typeof ApiEvaluateUsageOnFailureRoute
   '/api/fake-text': typeof ApiFakeTextRoute
   '/api/file-source-wire': typeof ApiFileSourceWireRoute
@@ -1935,6 +1944,7 @@ export interface FileRouteTypes {
     | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/evaluate-http-status'
+    | '/api/evaluate-refusal'
     | '/api/evaluate-usage-on-failure'
     | '/api/fake-text'
     | '/api/file-source-wire'
@@ -2135,6 +2145,7 @@ export interface FileRouteTypes {
     | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/evaluate-http-status'
+    | '/api/evaluate-refusal'
     | '/api/evaluate-usage-on-failure'
     | '/api/fake-text'
     | '/api/file-source-wire'
@@ -2335,6 +2346,7 @@ export interface FileRouteTypes {
     | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/evaluate-http-status'
+    | '/api/evaluate-refusal'
     | '/api/evaluate-usage-on-failure'
     | '/api/fake-text'
     | '/api/file-source-wire'
@@ -2536,6 +2548,7 @@ export interface RootRouteChildren {
   ApiDurableTakeoverRoute: typeof ApiDurableTakeoverRoute
   ApiEmbeddingRoute: typeof ApiEmbeddingRoute
   ApiEvaluateHttpStatusRoute: typeof ApiEvaluateHttpStatusRoute
+  ApiEvaluateRefusalRoute: typeof ApiEvaluateRefusalRoute
   ApiEvaluateUsageOnFailureRoute: typeof ApiEvaluateUsageOnFailureRoute
   ApiFakeTextRoute: typeof ApiFakeTextRoute
   ApiFileSourceWireRoute: typeof ApiFileSourceWireRoute
@@ -3236,6 +3249,13 @@ declare module '@tanstack/react-router' {
       path: '/api/evaluate-http-status'
       fullPath: '/api/evaluate-http-status'
       preLoaderRoute: typeof ApiEvaluateHttpStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/evaluate-refusal': {
+      id: '/api/evaluate-refusal'
+      path: '/api/evaluate-refusal'
+      fullPath: '/api/evaluate-refusal'
+      preLoaderRoute: typeof ApiEvaluateRefusalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/evaluate-usage-on-failure': {
@@ -4186,6 +4206,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDurableTakeoverRoute: ApiDurableTakeoverRoute,
   ApiEmbeddingRoute: ApiEmbeddingRoute,
   ApiEvaluateHttpStatusRoute: ApiEvaluateHttpStatusRoute,
+  ApiEvaluateRefusalRoute: ApiEvaluateRefusalRoute,
   ApiEvaluateUsageOnFailureRoute: ApiEvaluateUsageOnFailureRoute,
   ApiFakeTextRoute: ApiFakeTextRoute,
   ApiFileSourceWireRoute: ApiFileSourceWireRoute,
