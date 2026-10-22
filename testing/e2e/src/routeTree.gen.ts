@@ -78,6 +78,7 @@ import { Route as ApiCallOwnershipWireRouteImport } from './routes/api.call-owne
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiChatCompletionsIncompleteStreamRouteImport } from './routes/api.chat-completions-incomplete-stream'
 import { Route as ApiClientToolResumeStoreRouteImport } from './routes/api.client-tool-resume-store'
+import { Route as ApiCloudflareBindingHeadersWireRouteImport } from './routes/api.cloudflare-binding-headers-wire'
 import { Route as ApiCloudflareBindingWireRouteImport } from './routes/api.cloudflare-binding-wire'
 import { Route as ApiCodingToolsRouteImport } from './routes/api.coding-tools'
 import { Route as ApiCodingWorkspaceRouteImport } from './routes/api.coding-workspace'
@@ -567,6 +568,12 @@ const ApiClientToolResumeStoreRoute =
   ApiClientToolResumeStoreRouteImport.update({
     id: '/api/client-tool-resume-store',
     path: '/api/client-tool-resume-store',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiCloudflareBindingHeadersWireRoute =
+  ApiCloudflareBindingHeadersWireRouteImport.update({
+    id: '/api/cloudflare-binding-headers-wire',
+    path: '/api/cloudflare-binding-headers-wire',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiCloudflareBindingWireRoute =
@@ -1303,6 +1310,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/client-tool-resume-store': typeof ApiClientToolResumeStoreRoute
+  '/api/cloudflare-binding-headers-wire': typeof ApiCloudflareBindingHeadersWireRoute
   '/api/cloudflare-binding-wire': typeof ApiCloudflareBindingWireRoute
   '/api/coding-tools': typeof ApiCodingToolsRoute
   '/api/coding-workspace': typeof ApiCodingWorkspaceRoute
@@ -1501,6 +1509,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/client-tool-resume-store': typeof ApiClientToolResumeStoreRoute
+  '/api/cloudflare-binding-headers-wire': typeof ApiCloudflareBindingHeadersWireRoute
   '/api/cloudflare-binding-wire': typeof ApiCloudflareBindingWireRoute
   '/api/coding-tools': typeof ApiCodingToolsRoute
   '/api/coding-workspace': typeof ApiCodingWorkspaceRoute
@@ -1700,6 +1709,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/chat-completions-incomplete-stream': typeof ApiChatCompletionsIncompleteStreamRoute
   '/api/client-tool-resume-store': typeof ApiClientToolResumeStoreRoute
+  '/api/cloudflare-binding-headers-wire': typeof ApiCloudflareBindingHeadersWireRoute
   '/api/cloudflare-binding-wire': typeof ApiCloudflareBindingWireRoute
   '/api/coding-tools': typeof ApiCodingToolsRoute
   '/api/coding-workspace': typeof ApiCodingWorkspaceRoute
@@ -1900,6 +1910,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/chat-completions-incomplete-stream'
     | '/api/client-tool-resume-store'
+    | '/api/cloudflare-binding-headers-wire'
     | '/api/cloudflare-binding-wire'
     | '/api/coding-tools'
     | '/api/coding-workspace'
@@ -2098,6 +2109,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/chat-completions-incomplete-stream'
     | '/api/client-tool-resume-store'
+    | '/api/cloudflare-binding-headers-wire'
     | '/api/cloudflare-binding-wire'
     | '/api/coding-tools'
     | '/api/coding-workspace'
@@ -2296,6 +2308,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/chat-completions-incomplete-stream'
     | '/api/client-tool-resume-store'
+    | '/api/cloudflare-binding-headers-wire'
     | '/api/cloudflare-binding-wire'
     | '/api/coding-tools'
     | '/api/coding-workspace'
@@ -2495,6 +2508,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiChatCompletionsIncompleteStreamRoute: typeof ApiChatCompletionsIncompleteStreamRoute
   ApiClientToolResumeStoreRoute: typeof ApiClientToolResumeStoreRoute
+  ApiCloudflareBindingHeadersWireRoute: typeof ApiCloudflareBindingHeadersWireRoute
   ApiCloudflareBindingWireRoute: typeof ApiCloudflareBindingWireRoute
   ApiCodingToolsRoute: typeof ApiCodingToolsRoute
   ApiCodingWorkspaceRoute: typeof ApiCodingWorkspaceRoute
@@ -3103,6 +3117,13 @@ declare module '@tanstack/react-router' {
       path: '/api/client-tool-resume-store'
       fullPath: '/api/client-tool-resume-store'
       preLoaderRoute: typeof ApiClientToolResumeStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cloudflare-binding-headers-wire': {
+      id: '/api/cloudflare-binding-headers-wire'
+      path: '/api/cloudflare-binding-headers-wire'
+      fullPath: '/api/cloudflare-binding-headers-wire'
+      preLoaderRoute: typeof ApiCloudflareBindingHeadersWireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cloudflare-binding-wire': {
@@ -4129,6 +4150,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatCompletionsIncompleteStreamRoute:
     ApiChatCompletionsIncompleteStreamRoute,
   ApiClientToolResumeStoreRoute: ApiClientToolResumeStoreRoute,
+  ApiCloudflareBindingHeadersWireRoute: ApiCloudflareBindingHeadersWireRoute,
   ApiCloudflareBindingWireRoute: ApiCloudflareBindingWireRoute,
   ApiCodingToolsRoute: ApiCodingToolsRoute,
   ApiCodingWorkspaceRoute: ApiCodingWorkspaceRoute,
