@@ -39,6 +39,7 @@ import {
   isOfferedInputRecord,
   scopeOf,
   loggedChildWaits,
+  settledMessages,
   snapshotFrom,
   storedUser,
   changeSettings,
@@ -114,6 +115,16 @@ class AnswerRefused extends Error {
  * A layer of {@link HarnessSession}: config, thread settings, revert,
  * interrupts, media, and the snapshot.
  */
+/**
+ * What names `message` in a seed: its role and id, or the call id of a tool
+ * result. `undefined` for a message with neither.
+ */
+function seedKey(message: ModelMessage | undefined) {
+  const id =
+    message?.id ?? (message?.role === 'tool' ? message.toolCallId : undefined)
+  return id ? `${message?.role}:${id}` : undefined
+}
+
 export abstract class SessionState<
   THarness extends AnyHarness = AnyHarness,
 > extends SessionInputs<THarness> {
@@ -948,6 +959,58 @@ export abstract class SessionState<
       await this.endRevert()
       // The notes that came during the revert go after the messages again.
       await this.flushNotes()
+      return { inputId, status: 'accepted' }
+    })
+  }
+
+  /**
+   * Start this empty thread with `messages` that exist already: a
+   * conversation of your app from before it used the harness, or context
+   * for a new thread. The transcript keeps them as they are, and the next
+   * turn reads them. Each message needs an `id`, except a tool result, which
+   * its `toolCallId` names.
+   *
+   * A thread whose transcript starts with these messages (the same ids and
+   * roles) has the seed already: the seed is accepted and writes nothing, so
+   * a retry is safe. Refused for a thread with other messages
+   * (`'not_empty'`), for a tool call with no result in `messages`
+   * (`'open_tool_call'`), and while the session is not idle or another host
+   * runs the thread (`'busy'`). Throws for a message with no id.
+   *
+   * @example
+   * ```ts
+   * await session.seed({ messages: await loadOldConversation(threadId) })
+   * ```
+   */
+  async seed({
+    messages,
+  }: {
+    messages: ReadonlyArray<ModelMessage>
+  }): Promise<Receipt> {
+    const keys = messages.map((message, index) => {
+      const key = seedKey(message)
+      if (key === undefined) {
+        throw new Error(`Message ${index} of the seed has no id.`)
+      }
+      return key
+    })
+    const inputId = createInputId()
+    if (!(await this.ownsIdleThread())) {
+      return { inputId, status: 'rejected', reason: 'busy' }
+    }
+    return this.holding(async () => {
+      const { transcript } = this.writer.state
+      const isSeeded = keys.every(
+        (key, index) => seedKey(transcript[index]) === key,
+      )
+      if (isSeeded) return { inputId, status: 'accepted' }
+      if (transcript.length > 0) {
+        return { inputId, status: 'rejected', reason: 'not_empty' }
+      }
+      if (settledMessages(messages).length < messages.length) {
+        return { inputId, status: 'rejected', reason: 'open_tool_call' }
+      }
+      await this.writer.commit({ messages: [...messages] })
       return { inputId, status: 'accepted' }
     })
   }
