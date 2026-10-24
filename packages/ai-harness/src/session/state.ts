@@ -39,7 +39,6 @@ import {
   isOfferedInputRecord,
   scopeOf,
   loggedChildWaits,
-  settledMessages,
   snapshotFrom,
   storedUser,
   changeSettings,
@@ -112,10 +111,6 @@ class AnswerRefused extends Error {
 }
 
 /**
- * A layer of {@link HarnessSession}: config, thread settings, revert,
- * interrupts, media, and the snapshot.
- */
-/**
  * What names `message` in a seed: its role and id, or the call id of a tool
  * result. `undefined` for a message with neither.
  */
@@ -125,6 +120,28 @@ function seedKey(message: ModelMessage | undefined) {
   return id ? `${message?.role}:${id}` : undefined
 }
 
+/**
+ * Why the tool calls of `messages` cannot start a thread: a tool result
+ * that answers no open call before it (`'unknown_tool_call'`), or a call
+ * with no result (`'open_tool_call'`). `undefined` when each call has its
+ * result.
+ */
+function seedToolFault(messages: ReadonlyArray<ModelMessage>) {
+  const open = new Set<string>()
+  for (const message of messages) {
+    if (message.role === 'tool') {
+      const callId = message.toolCallId
+      if (!callId || !open.delete(callId)) return 'unknown_tool_call'
+    }
+    for (const call of message.toolCalls ?? []) open.add(call.id)
+  }
+  return open.size > 0 ? 'open_tool_call' : undefined
+}
+
+/**
+ * A layer of {@link HarnessSession}: config, thread settings, revert,
+ * interrupts, media, and the snapshot.
+ */
 export abstract class SessionState<
   THarness extends AnyHarness = AnyHarness,
 > extends SessionInputs<THarness> {
@@ -133,6 +150,8 @@ export abstract class SessionState<
    * on when the log ends its wait (see `afterWaitEnd`).
    */
   protected readonly waitEnds = new Map<string, () => void>()
+  /** The last `seed()`. The calls run one at a time. */
+  protected seeds: Promise<unknown> = Promise.resolve()
   /** The secret answers to `step.ask` waits that this host kept, by wait id. */
   protected readonly keptAnswers = new Map<string, unknown>()
   /**
@@ -972,10 +991,13 @@ export abstract class SessionState<
    *
    * A thread whose transcript starts with these messages (the same ids and
    * roles) has the seed already: the seed is accepted and writes nothing, so
-   * a retry is safe. Refused for a thread with other messages
-   * (`'not_empty'`), for a tool call with no result in `messages`
-   * (`'open_tool_call'`), and while the session is not idle or another host
-   * runs the thread (`'busy'`). Throws for a message with no id.
+   * a retry is safe. An empty `messages` is accepted in an empty thread
+   * only. Seeds run one at a time, so of two seeds of an empty thread one
+   * writes. Refused for a thread with other messages (`'not_empty'`), for a
+   * tool call with no result in `messages` (`'open_tool_call'`), for a tool
+   * result with no call before it in `messages` (`'unknown_tool_call'`), and
+   * while the session is not idle or another host runs the thread
+   * (`'busy'`). Throws for a message with no id.
    *
    * @example
    * ```ts
@@ -994,22 +1016,33 @@ export abstract class SessionState<
       }
       return key
     })
+    // One at a time: two seeds of an empty thread must not both write.
+    const run = this.seeds.then(() => this.runSeed(messages, keys))
+    this.seeds = run.catch(() => {})
+    return run
+  }
+
+  protected async runSeed(
+    messages: ReadonlyArray<ModelMessage>,
+    keys: ReadonlyArray<string>,
+  ): Promise<Receipt> {
     const inputId = createInputId()
     if (!(await this.ownsIdleThread())) {
       return { inputId, status: 'rejected', reason: 'busy' }
     }
     return this.holding(async () => {
       const { transcript } = this.writer.state
-      const isSeeded = keys.every(
-        (key, index) => seedKey(transcript[index]) === key,
-      )
+      // An empty seed is in an empty thread only.
+      const isSeeded =
+        keys.length === 0
+          ? transcript.length === 0
+          : keys.every((key, index) => seedKey(transcript[index]) === key)
       if (isSeeded) return { inputId, status: 'accepted' }
       if (transcript.length > 0) {
         return { inputId, status: 'rejected', reason: 'not_empty' }
       }
-      if (settledMessages(messages).length < messages.length) {
-        return { inputId, status: 'rejected', reason: 'open_tool_call' }
-      }
+      const fault = seedToolFault(messages)
+      if (fault) return { inputId, status: 'rejected', reason: fault }
       await this.writer.commit({ messages: [...messages] })
       return { inputId, status: 'accepted' }
     })

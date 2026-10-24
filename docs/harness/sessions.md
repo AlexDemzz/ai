@@ -178,8 +178,14 @@ await imported.send('Where did we leave off?')
 
 - `messages` are model messages. Each one needs an `id`, and a tool result needs its `toolCallId`. A message with neither throws.
 - The transcript keeps the messages as they are, with their ids.
-- A retry is safe. When the transcript starts with the same messages (the same roles and ids), `seed` accepts and writes nothing.
-- `seed` refuses with `not_empty` for a thread with other messages, `open_tool_call` for a tool call with no result, and `busy` while a turn runs or another host runs the thread. With host `access`, it needs the `send` action.
+- A retry is safe. When the transcript starts with the same messages (the same roles and ids), `seed` accepts and writes nothing. Seeds run one at a time, so when two seeds of an empty thread start at once, only one writes.
+- An empty `messages` is accepted in an empty thread only. It writes nothing.
+- `seed` refuses with:
+  - `not_empty` for a thread with other messages.
+  - `open_tool_call` for a tool call with no result.
+  - `unknown_tool_call` for a tool result with no call before it in `messages`.
+  - `busy` while a turn runs or another host runs the thread.
+- With host `access`, `seed` needs the `send` action.
 - The seeded messages belong to no input, so `host.sessions.eraseUser` does not find them. A media part keeps its source, and the host does not copy it into the media store of the thread.
 
 ## Rename and remove a session

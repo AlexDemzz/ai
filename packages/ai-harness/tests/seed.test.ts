@@ -121,6 +121,65 @@ describe('session.seed', () => {
     await host.close()
   })
 
+  it('writes one of two seeds that start at once', async () => {
+    const { session, host } = await open()
+    const other: Array<ModelMessage> = [
+      { id: 'other-1', role: 'user', content: 'Hello.' },
+    ]
+
+    const receipts = await Promise.all([
+      session.seed({ messages: OLD }),
+      session.seed({ messages: other }),
+      session.seed({ messages: OLD }),
+    ])
+
+    expect(receipts.map((receipt) => receipt.status)).toEqual([
+      'accepted',
+      'rejected',
+      'accepted',
+    ])
+    expect(receipts[1]).toMatchObject({ reason: 'not_empty' })
+    expect(idsOf(await session.transcript())).toEqual(idsOf(OLD))
+    await host.close()
+  })
+
+  it('refuses an empty seed of a thread with messages, and accepts it in an empty thread', async () => {
+    const { session, host } = await open()
+
+    expect(await session.seed({ messages: [] })).toMatchObject({
+      status: 'accepted',
+    })
+    expect(await session.transcript()).toEqual([])
+    await session.seed({ messages: OLD })
+    expect(await session.seed({ messages: [] })).toMatchObject({
+      status: 'rejected',
+      reason: 'not_empty',
+    })
+    await host.close()
+  })
+
+  it('refuses a tool result with no call before it', async () => {
+    const { session, host } = await open()
+    const orphan: Array<ModelMessage> = [
+      ...OLD.slice(0, 1),
+      { role: 'tool', toolCallId: 'call-none', content: 'Shipped.' },
+    ]
+    const unnamed: Array<ModelMessage> = [
+      ...OLD.slice(0, 1),
+      { id: 'tool-1', role: 'tool', content: 'Shipped.' },
+    ]
+    const answeredTwice = [...OLD.slice(0, 3), ...OLD.slice(2, 3)]
+
+    for (const messages of [orphan, unnamed, answeredTwice]) {
+      expect(await session.seed({ messages })).toMatchObject({
+        status: 'rejected',
+        reason: 'unknown_tool_call',
+      })
+    }
+    expect(await session.transcript()).toEqual([])
+    await host.close()
+  })
+
   it('refuses while a turn runs', async () => {
     const release = gate()
     const { session, host } = await open([after(release.opened, 'Done.')])
