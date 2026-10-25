@@ -182,7 +182,7 @@ await imported.send('Where did we leave off?')
 - An empty `messages` is accepted in an empty thread only. It writes nothing.
 - `seed` refuses with:
   - `not_empty` for a thread with other messages.
-  - `open_tool_call` for a tool call with no result.
+  - `open_tool_call` for a tool call with no result, such as a call that repeats the id of a call that has no result yet.
   - `unknown_tool_call` for a tool result with no call before it in `messages`.
   - `busy` while a turn runs or another host runs the thread.
 - With host `access`, `seed` needs the `send` action.

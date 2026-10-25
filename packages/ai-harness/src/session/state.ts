@@ -123,8 +123,9 @@ function seedKey(message: ModelMessage | undefined) {
 /**
  * Why the tool calls of `messages` cannot start a thread: a tool result
  * that answers no open call before it (`'unknown_tool_call'`), or a call
- * with no result (`'open_tool_call'`). `undefined` when each call has its
- * result.
+ * with no result (`'open_tool_call'`). A call that repeats the id of an open
+ * call leaves one of the two with no result. `undefined` when each call has
+ * its result.
  */
 function seedToolFault(messages: ReadonlyArray<ModelMessage>) {
   const open = new Set<string>()
@@ -133,7 +134,10 @@ function seedToolFault(messages: ReadonlyArray<ModelMessage>) {
       const callId = message.toolCallId
       if (!callId || !open.delete(callId)) return 'unknown_tool_call'
     }
-    for (const call of message.toolCalls ?? []) open.add(call.id)
+    for (const call of message.toolCalls ?? []) {
+      if (open.has(call.id)) return 'open_tool_call'
+      open.add(call.id)
+    }
   }
   return open.size > 0 ? 'open_tool_call' : undefined
 }
@@ -994,10 +998,11 @@ export abstract class SessionState<
    * a retry is safe. An empty `messages` is accepted in an empty thread
    * only. Seeds run one at a time, so of two seeds of an empty thread one
    * writes. Refused for a thread with other messages (`'not_empty'`), for a
-   * tool call with no result in `messages` (`'open_tool_call'`), for a tool
-   * result with no call before it in `messages` (`'unknown_tool_call'`), and
-   * while the session is not idle or another host runs the thread
-   * (`'busy'`). Throws for a message with no id.
+   * tool call with no result in `messages`, such as one that repeats the id
+   * of an open call (`'open_tool_call'`), for a tool result with no call
+   * before it in `messages` (`'unknown_tool_call'`), and while the session is
+   * not idle or another host runs the thread (`'busy'`). Throws for a message
+   * with no id.
    *
    * @example
    * ```ts

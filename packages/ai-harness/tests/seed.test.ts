@@ -121,6 +121,32 @@ describe('session.seed', () => {
     await host.close()
   })
 
+  it('refuses a tool call that repeats the id of an open call', async () => {
+    const { session, host } = await open()
+    const call = {
+      id: 'call-old',
+      type: 'function' as const,
+      function: { name: 'findOrder', arguments: '{"id":42}' },
+    }
+    const repeated: Array<ModelMessage> = [
+      ...OLD.slice(0, 1),
+      {
+        id: 'old-2',
+        role: 'assistant',
+        content: null,
+        toolCalls: [call, call],
+      },
+      ...OLD.slice(2),
+    ]
+
+    expect(await session.seed({ messages: repeated })).toMatchObject({
+      status: 'rejected',
+      reason: 'open_tool_call',
+    })
+    expect(await session.transcript()).toEqual([])
+    await host.close()
+  })
+
   it('writes one of two seeds that start at once', async () => {
     const { session, host } = await open()
     const other: Array<ModelMessage> = [
