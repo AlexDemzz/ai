@@ -311,6 +311,22 @@ describe('session.seed', () => {
     await host.close()
   })
 
+  it('forks through a split UI message as a whole', async () => {
+    const { session, host, harness } = await open()
+    const messages = convertMessagesToModelMessages(CHAT)
+    await session.seed({ messages })
+    await session.send('Thanks.')
+
+    const fork = await host.fork(harness, {
+      threadId: 't1',
+      newThreadId: 't2',
+      at: 'a-1',
+    })
+
+    expect(await fork.transcript()).toEqual(messages)
+    await host.close()
+  })
+
   it('needs the send action on a host with access', async () => {
     interface User {
       id: string

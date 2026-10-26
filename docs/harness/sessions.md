@@ -127,7 +127,7 @@ const fork = await host.open(assistant, { threadId: forked.threadId })
 await fork.send('Plan a trip to Porto.')
 ```
 
-- `at: { through: id }` copies the messages up to and including `id`.
+- `at: { through: id }` copies the messages up to and including `id`. When several messages share the id, such as the parts of one seeded UI message, it copies through the last one.
 - `at: { before: id }` copies the messages before `id`. A fork before the first message has no messages, but it keeps the settings.
 - The host picks the new thread id. The new entry has the title of the old one plus ` (fork)`. A thread without a title gives a fork without a title.
 - With a `user` and host `access`, the user who forks owns the fork. `members` picks who else is in it. See [Fork a shared thread](./shared-threads#6-fork-a-shared-thread). Without access and without `members`, the fork keeps the owner and the members of the old thread.

@@ -2785,7 +2785,9 @@ export function createHarnessHost<U extends HarnessUser = HarnessUser>(
           ? transcript.length
           : at === null
             ? 0
-            : transcript.findIndex((message) => message.id === at) + 1
+            : // Of messages that share the id, such as the parts of one
+              // seeded UI message, the last one: see `revert`.
+              transcript.findLastIndex((message) => message.id === at) + 1
       if (typeof at === 'string' && end === 0) {
         throw new Error(
           `Thread ${JSON.stringify(threadId)} has no message ${JSON.stringify(at)}.`,

@@ -950,14 +950,14 @@ export abstract class SessionState<
   /**
    * Go back to the message `messageId`. The transcript hides the messages
    * after it. Of messages that share the id, such as the parts of one UI
-   * message that a seed split at its tool results, it is the last one. With the snapshots plugin, the files that their tool calls
-   * changed go back too. `unrevert()` undoes it. The next turn drops the
-   * hidden messages for good. The revert state is saved, so it survives a
-   * restart. Refused while the session is not idle, or another host runs
-   * the thread (`'busy'`), and for a message that is not in the transcript
-   * (`'unknown_message'`). `user` is who reverts. Default: the
-   * user that opened the session. The `harness.revert` record keeps
-   * it. A handle of `host.open` checks that it is the user of the
+   * message that a seed split at its tool results, it is the last one. With
+   * the snapshots plugin, the files that their tool calls changed go back too.
+   * `unrevert()` undoes it. The next turn drops the hidden messages for good.
+   * The revert state is saved, so it survives a restart. Refused while the
+   * session is not idle, or another host runs the thread (`'busy'`), and for a
+   * message that is not in the transcript (`'unknown_message'`). `user` is who
+   * reverts. Default: the user that opened the session. The `harness.revert`
+   * record keeps it. A handle of `host.open` checks that it is the user of the
    * handle.
    *
    * @example
