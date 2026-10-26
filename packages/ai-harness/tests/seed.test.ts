@@ -30,6 +30,34 @@ const OLD: Array<ModelMessage> = [
   { id: 'old-4', role: 'assistant', content: 'Order 42 shipped yesterday.' },
 ]
 
+/**
+ * A chat of UI messages. The converter splits `a-1` at its tool result into
+ * two assistant messages with that id.
+ */
+const CHAT: Array<UIMessage> = [
+  { id: 'u-1', role: 'user', parts: [{ type: 'text', content: 'Hi.' }] },
+  {
+    id: 'a-1',
+    role: 'assistant',
+    parts: [
+      {
+        type: 'tool-call',
+        id: 'call-1',
+        name: 'lookUp',
+        arguments: '{}',
+        state: 'input-complete',
+      },
+      {
+        type: 'tool-result',
+        toolCallId: 'call-1',
+        content: '{"found":true}',
+        state: 'complete',
+      },
+      { type: 'text', content: 'Found it.' },
+    ],
+  },
+]
+
 const idsOf = (messages: ReadonlyArray<ModelMessage>) =>
   messages.map((message) => message.id)
 
@@ -147,6 +175,33 @@ describe('session.seed', () => {
     await host.close()
   })
 
+  it('refuses two messages with the same id, whatever their roles', async () => {
+    const { session, host } = await open()
+    const sameRole: Array<ModelMessage> = [
+      ...OLD,
+      { id: 'old-1', role: 'user', content: 'And my refund?' },
+    ]
+    const otherRole: Array<ModelMessage> = [
+      ...OLD.slice(0, 3),
+      { id: 'old-1', role: 'assistant', content: 'Order 42 shipped.' },
+    ]
+    // a-1 again after a user message is another message, not a split one.
+    const afterUser: Array<ModelMessage> = [
+      ...convertMessagesToModelMessages(CHAT),
+      { id: 'u-2', role: 'user', content: 'Thanks.' },
+      { id: 'a-1', role: 'assistant', content: 'You are welcome.' },
+    ]
+
+    for (const messages of [sameRole, otherRole, afterUser]) {
+      expect(await session.seed({ messages })).toMatchObject({
+        status: 'rejected',
+        reason: 'duplicate_message',
+      })
+    }
+    expect(await session.transcript()).toEqual([])
+    await host.close()
+  })
+
   it('writes one of two seeds that start at once', async () => {
     const { session, host } = await open()
     const other: Array<ModelMessage> = [
@@ -232,30 +287,7 @@ describe('session.seed', () => {
 
   it('takes the model messages of UI messages, and a retry of them', async () => {
     const { session, host } = await open()
-    const chat: Array<UIMessage> = [
-      { id: 'u-1', role: 'user', parts: [{ type: 'text', content: 'Hi.' }] },
-      {
-        id: 'a-1',
-        role: 'assistant',
-        parts: [
-          {
-            type: 'tool-call',
-            id: 'call-1',
-            name: 'lookUp',
-            arguments: '{}',
-            state: 'input-complete',
-          },
-          {
-            type: 'tool-result',
-            toolCallId: 'call-1',
-            content: '{"found":true}',
-            state: 'complete',
-          },
-          { type: 'text', content: 'Found it.' },
-        ],
-      },
-    ]
-    const messages = convertMessagesToModelMessages(chat)
+    const messages = convertMessagesToModelMessages(CHAT)
 
     for (let attempt = 0; attempt < 2; attempt++) {
       expect(await session.seed({ messages })).toMatchObject({
@@ -263,6 +295,19 @@ describe('session.seed', () => {
       })
     }
     expect(await session.transcript()).toHaveLength(messages.length)
+    await host.close()
+  })
+
+  it('reverts to a split UI message as a whole', async () => {
+    const { session, host } = await open()
+    const messages = convertMessagesToModelMessages(CHAT)
+    await session.seed({ messages })
+    await session.send('Thanks.')
+
+    expect(await session.revert({ messageId: 'a-1' })).toMatchObject({
+      status: 'accepted',
+    })
+    expect(await session.transcript()).toEqual(messages)
     await host.close()
   })
 

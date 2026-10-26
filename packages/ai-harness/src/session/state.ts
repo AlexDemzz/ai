@@ -121,6 +121,30 @@ function seedKey(message: ModelMessage | undefined) {
 }
 
 /**
+ * Whether two of `messages` share an `id`, whatever their roles. An
+ * assistant message may repeat the id of the assistant message before it,
+ * with only tool results between them: `convertMessagesToModelMessages`
+ * splits one UI message at its tool results that way.
+ */
+function repeatsMessageId(messages: ReadonlyArray<ModelMessage>) {
+  const ids = new Set<string>()
+  let previous: ModelMessage | undefined
+  for (const message of messages) {
+    const { id } = message
+    if (id !== undefined) {
+      const continues =
+        message.role === 'assistant' &&
+        previous?.role === 'assistant' &&
+        previous.id === id
+      if (ids.has(id) && !continues) return true
+      ids.add(id)
+    }
+    if (message.role !== 'tool') previous = message
+  }
+  return false
+}
+
+/**
  * Why the tool calls of `messages` cannot start a thread: a tool result
  * that answers no open call before it (`'unknown_tool_call'`), or a call
  * with no result (`'open_tool_call'`). A call that repeats the id of an open
@@ -912,17 +936,21 @@ export abstract class SessionState<
       | undefined
   }
 
-  /** The index of the revert message in `messages`, or -1. */
+  /**
+   * The index of the revert message in `messages`, or -1. Of messages that
+   * share the id, the last one: see `revert`.
+   */
   protected revertedAt(messages: ReadonlyArray<ModelMessage>) {
     const id = this.reverted?.messageId
     return id === undefined
       ? -1
-      : messages.findIndex((message) => message.id === id)
+      : messages.findLastIndex((message) => message.id === id)
   }
 
   /**
    * Go back to the message `messageId`. The transcript hides the messages
-   * after it. With the snapshots plugin, the files that their tool calls
+   * after it. Of messages that share the id, such as the parts of one UI
+   * message that a seed split at its tool results, it is the last one. With the snapshots plugin, the files that their tool calls
    * changed go back too. `unrevert()` undoes it. The next turn drops the
    * hidden messages for good. The revert state is saved, so it survives a
    * restart. Refused while the session is not idle, or another host runs
@@ -952,7 +980,7 @@ export abstract class SessionState<
       // The reader picks a message of the transcript, also one that a
       // compaction took out of the model context.
       const messages = [...this.writer.state.transcript]
-      const at = messages.findIndex((message) => message.id === messageId)
+      const at = messages.findLastIndex((message) => message.id === messageId)
       if (at < 0)
         return { inputId, status: 'rejected', reason: 'unknown_message' }
       // A revert that stands ends first, so its files come back.
@@ -997,8 +1025,11 @@ export abstract class SessionState<
    * roles) has the seed already: the seed is accepted and writes nothing, so
    * a retry is safe. An empty `messages` is accepted in an empty thread
    * only. Seeds run one at a time, so of two seeds of an empty thread one
-   * writes. Refused for a thread with other messages (`'not_empty'`), for a
-   * tool call with no result in `messages`, such as one that repeats the id
+   * writes. Refused for a thread with other messages (`'not_empty'`), for
+   * two messages with the same `id`, whatever their roles
+   * (`'duplicate_message'`), except an assistant message that continues the
+   * one before it across its tool results, as
+   * `convertMessagesToModelMessages` writes it, for a tool call with no result in `messages`, such as one that repeats the id
    * of an open call (`'open_tool_call'`), for a tool result with no call
    * before it in `messages` (`'unknown_tool_call'`), and while the session is
    * not idle or another host runs the thread (`'busy'`). Throws for a message
@@ -1045,6 +1076,9 @@ export abstract class SessionState<
       if (isSeeded) return { inputId, status: 'accepted' }
       if (transcript.length > 0) {
         return { inputId, status: 'rejected', reason: 'not_empty' }
+      }
+      if (repeatsMessageId(messages)) {
+        return { inputId, status: 'rejected', reason: 'duplicate_message' }
       }
       const fault = seedToolFault(messages)
       if (fault) return { inputId, status: 'rejected', reason: fault }

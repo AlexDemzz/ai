@@ -149,7 +149,7 @@ await session.revert({ messageId: question.id })
 await session.unrevert()
 ```
 
-- While a revert stands, `transcript()` hides the messages after that message. The session keeps them.
+- While a revert stands, `transcript()` hides the messages after that message. The session keeps them. When several messages share the id, such as the parts of one seeded UI message, the revert goes to the last one, so the whole UI message stays.
 - The next turn drops the hidden messages for good. A steer, a follow-up, and `continueWithoutMessage` are turns too.
 - The session saves the revert in the log. A restart keeps it.
 - Each change sends a `harness.revert` event. Read the transcript again when it arrives.
@@ -176,12 +176,13 @@ if (receipt.status === 'rejected') throw new Error(receipt.reason)
 await imported.send('Where did we leave off?')
 ```
 
-- `messages` are model messages. Each one needs an `id`, and a tool result needs its `toolCallId`. A message with neither throws.
+- `messages` are model messages. Each one needs an `id`. A tool result may leave out `id` when it has its `toolCallId`. A message with neither throws.
 - The transcript keeps the messages as they are, with their ids.
 - A retry is safe. When the transcript starts with the same messages (the same roles and ids), `seed` accepts and writes nothing. Seeds run one at a time, so when two seeds of an empty thread start at once, only one writes.
 - An empty `messages` is accepted in an empty thread only. It writes nothing.
 - `seed` refuses with:
   - `not_empty` for a thread with other messages.
+  - `duplicate_message` for two messages with the same `id`, whatever their roles. An assistant message may repeat the id of the assistant message before it when only tool results sit between them. `convertMessagesToModelMessages` splits one UI message at its tool results that way.
   - `open_tool_call` for a tool call with no result, such as a call that repeats the id of a call that has no result yet.
   - `unknown_tool_call` for a tool result with no call before it in `messages`.
   - `busy` while a turn runs or another host runs the thread.
