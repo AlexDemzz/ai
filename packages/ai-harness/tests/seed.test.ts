@@ -327,6 +327,24 @@ describe('session.seed', () => {
     await host.close()
   })
 
+  it('forks before a tool result with an id inside a split UI message', async () => {
+    const { session, host, harness } = await open()
+    const messages = convertMessagesToModelMessages(CHAT).map((message) =>
+      message.role === 'tool' ? { ...message, id: 'tool-1' } : message,
+    )
+    await session.seed({ messages })
+
+    const entry = await host.sessions.fork({
+      harness,
+      threadId: 't1',
+      at: { before: 'tool-1' },
+    })
+    const fork = await host.open(harness, { threadId: entry.threadId })
+
+    expect(idsOf(await fork.transcript())).toEqual(['u-1', 'a-1'])
+    await host.close()
+  })
+
   it('needs the send action on a host with access', async () => {
     interface User {
       id: string
